@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HasibPro — دخول</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+function toggleAuthMode(){
+  document.body.classList.toggle('light');
+  localStorage.setItem('authTheme', document.body.classList.contains('light') ? 'light' : 'dark');
+}
+// Apply saved theme on load
+(function(){
+  const t = localStorage.getItem('authTheme');
+  if(t === 'light') document.body.classList.add('light');
+})();
+
+</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body.light{--bg:#f0f4f8;--bg2:#ffffff;--bg3:#e2e8f0;--card:#ffffff;--card2:#f8fafc;--border:#cbd5e1;--text:#1e293b;--text2:#475569;--text3:#94a3b8;}
+:root{
+  --bg:#060d1a;
+  --card:#0d1829;
+  --border:#1a2d47;
+  --teal:#00d4aa;
+  --teal2:#00b894;
+  --blue:#3b82f6;
+  --red:#ef4444;
+  --text:#e2e8f0;
+  --text2:#94a3b8;
+  --text3:#64748b;
+}
+body{
+  font-family:'Cairo',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  padding:20px 16px 40px 16px;
+  position:relative;
+  overflow-y:auto;
+  overflow-x:hidden;
+}
+
+/* خلفية متحركة */
+.bg-orb{
+  position:fixed;
+  border-radius:50%;
+  filter:blur(80px);
+  opacity:0.15;
+  pointer-events:none;
+  animation:float 8s ease-in-out infinite;
+}
+.bg-orb-1{width:400px;height:400px;background:var(--teal);top:-100px;right:-100px;animation-delay:0s;}
+.bg-orb-2{width:300px;height:300px;background:var(--blue);bottom:-80px;left:-80px;animation-delay:3s;}
+.bg-orb-3{width:200px;height:200px;background:var(--teal2);top:30%;left:50%;animation-delay:5s;}
+@keyframes float{0%,100%{transform:translateY(0) scale(1);}50%{transform:translateY(-20px) scale(1.05);}}
+
+/* Grid pattern */
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  background-image:linear-gradient(rgba(0,212,170,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,170,0.03) 1px,transparent 1px);
+  background-size:40px 40px;
+  pointer-events:none;
+}
+
+.container{
+  width:100%;
+  max-width:460px;
+  position:relative;
+  z-index:1;
+  margin:auto;
+  padding-bottom:20px;
+}
+
+/* Logo */
+.logo{
+  text-align:center;
+  margin-bottom:32px;
+  animation:slideDown 0.6s ease both;
+}
+.logo-icon{
+  width:72px;height:72px;
+  border-radius:20px;
+  background:linear-gradient(135deg,var(--teal),var(--blue));
+  display:flex;align-items:center;justify-content:center;
+  font-size:32px;
+  margin:0 auto 16px;
+  box-shadow:0 0 40px rgba(0,212,170,0.3);
+}
+.logo-title{font-size:24px;font-weight:900;color:var(--text);line-height:1.3;}
+.logo-sub{font-size:12px;color:var(--text3);margin-top:4px;}
+
+@keyframes slideDown{from{opacity:0;transform:translateY(-20px);}to{opacity:1;transform:translateY(0);}}
+
+/* Card */
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:24px;
+  padding:24px 20px;
+  box-shadow:0 25px 60px rgba(0,0,0,0.5);
+  animation:slideUp 0.6s ease 0.2s both;
+}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+
+/* Tabs */
+.tabs{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:6px;
+  background:#060d1a;
+  border-radius:12px;
+  padding:5px;
+  margin-bottom:28px;
+}
+.tab-btn{
+  padding:10px;
+  border-radius:9px;
+  border:none;
+  font-family:'Cairo',sans-serif;
+  font-size:13px;
+  font-weight:700;
+  cursor:pointer;
+  transition:all 0.3s;
+  color:var(--text3);
+  background:transparent;
+}
+.tab-btn.active{
+  background:linear-gradient(135deg,var(--teal),var(--teal2));
+  color:#000;
+  box-shadow:0 4px 15px rgba(0,212,170,0.3);
+}
+
+/* Form */
+.form-group{margin-bottom:16px;}
+.form-label{
+  display:block;
+  font-size:11px;
+  font-weight:700;
+  color:var(--text2);
+  margin-bottom:7px;
+}
+.form-input{
+  width:100%;
+  background:#060d1a;
+  border:1.5px solid var(--border);
+  border-radius:12px;
+  padding:13px 16px;
+  font-family:'Cairo',sans-serif;
+  font-size:14px;
+  color:var(--text);
+  direction:rtl;
+  transition:all 0.3s;
+  outline:none;
+}
+.form-input:focus{
+  border-color:var(--teal);
+  box-shadow:0 0 0 3px rgba(0,212,170,0.1);
+}
+.form-input::placeholder{color:var(--text3);}
+
+/* Submit button */
+.btn-submit{
+  width:100%;
+  padding:14px;
+  border-radius:12px;
+  border:none;
+  font-family:'Cairo',sans-serif;
+  font-size:15px;
+  font-weight:800;
+  cursor:pointer;
+  background:linear-gradient(135deg,var(--teal),var(--teal2));
+  color:#000;
+  margin-top:8px;
+  transition:all 0.3s;
+  position:relative;
+  overflow-y:auto;
+  overflow-x:hidden;
+}
+.btn-submit:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,212,170,0.4);}
+.btn-submit:active{transform:translateY(0);}
+.btn-submit:disabled{opacity:0.6;cursor:not-allowed;transform:none;}
+
+/* Loading spinner */
+.spinner{
+  width:18px;height:18px;
+  border:2px solid rgba(0,0,0,0.3);
+  border-top-color:#000;
+  border-radius:50%;
+  display:inline-block;
+  animation:spin 0.8s linear infinite;
+  vertical-align:middle;
+  margin-left:8px;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* Messages */
+.msg{
+  border-radius:10px;
+  padding:12px 14px;
+  font-size:12px;
+  margin-bottom:16px;
+  display:none;
+  line-height:1.6;
+}
+.msg.show{display:block;}
+.msg-error{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;}
+.msg-success{background:rgba(0,212,170,0.1);border:1px solid rgba(0,212,170,0.3);color:var(--teal);}
+
+/* Divider */
+.divider{
+  display:flex;align-items:center;gap:12px;
+  margin:20px 0;
+  color:var(--text3);font-size:11px;
+}
+.divider::before,.divider::after{
+  content:'';flex:1;
+  height:1px;background:var(--border);
+}
+
+/* Features */
+.features{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:7px;
+  margin-top:16px;
+}
+.feature{
+  background:#060d1a;
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:9px 10px;
+  font-size:11px;
+  color:var(--text2);
+  display:flex;align-items:center;gap:7px;
+  white-space:nowrap;
+}
+.feature-icon{font-size:15px;flex-shrink:0;}
+
+/* Footer */
+.footer{
+  text-align:center;
+  margin-top:24px;
+  font-size:10px;
+  color:var(--text3);
+  animation:slideUp 0.6s ease 0.4s both;
+}
+
+/* Toast */
+.toast{
+  position:fixed;
+  bottom:30px;
+  left:50%;
+  transform:translateX(-50%) translateY(20px);
+  background:var(--card);
+  border:1px solid var(--teal);
+  border-radius:12px;
+  padding:12px 24px;
+  font-family:'Cairo',sans-serif;
+  font-size:13px;
+  font-weight:700;
+  color:var(--teal);
+  z-index:9999;
+  opacity:0;
+  transition:all 0.3s;
+  pointer-events:none;
+  white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* Success screen */
+.success-screen{
+  display:none;
+  text-align:center;
+  padding:20px 0;
+}
+.success-icon{
+  font-size:60px;
+  margin-bottom:16px;
+  animation:bounce 0.6s ease both;
+}
+@keyframes bounce{0%{transform:scale(0);}70%{transform:scale(1.2);}100%{transform:scale(1);}}
+.success-title{font-size:20px;font-weight:900;color:var(--teal);margin-bottom:8px;}
+.success-sub{font-size:12px;color:var(--text3);line-height:1.7;}
+.btn-go{
+  display:inline-flex;align-items:center;gap:8px;
+  margin-top:20px;
+  padding:13px 28px;
+  border-radius:12px;
+  border:none;
+  font-family:'Cairo',sans-serif;
+  font-size:14px;
+  font-weight:800;
+  cursor:pointer;
+  background:linear-gradient(135deg,var(--teal),var(--teal2));
+  color:#000;
+  transition:all 0.3s;
+  text-decoration:none;
+}
+.btn-go:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,212,170,0.4);}
+
+/* Dark/Light mode toggle */
+.mode-toggle{position:absolute;top:16px;left:16px;background:var(--card2);border:1px solid var(--border);border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.3s;z-index:10;}
+.mode-toggle:hover{border-color:var(--teal);transform:scale(1.05);}
+.mode-toggle svg{width:18px;height:18px;stroke:var(--text2);fill:none;stroke-width:1.8;stroke-linecap:round;}
+body.light .mode-toggle svg.moon{display:none;}
+body.light .mode-toggle svg.sun{display:block;}
+body:not(.light) .mode-toggle svg.moon{display:block;}
+body:not(.light) .mode-toggle svg.sun{display:none;}
+</style>
+<link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAADk0lEQVR42u1WW2gcVRj+zpmZvWWzbUIySaNRhFBDmoqhoIQ+bOLlwapBWyb0goK2VKkPEaVYqXK6wkqCgtonW7AorUF2UFARhIK7KyUUTVmpJg29Itm0TbNmN7vZmd2ZOXN8WF/EZrtNgvSh38t5Ofzf+b/vvxzgLu5YaDHp/yMTgtR6tbaLAiScYP/KoC8BNzK5gUAf5ADQufeb3qmjW08DECsnrIL7Wdwn5+xPYMq7mrOZ5tP6oAkIApCbEsu3ygwAnvme+e1m8qZDvF3c8E4Lw5+yc9I5K6+aTuaqm/ete1xGXcBwSp0AUmAgiNw8U1qNL5xgEggEV3PD0hrrPSEWw65S2ucEMMrrfSmhhqZ4SHqYSLZB/YW3YWXOa7GYhAhZUlZaXbAEAECRzValfN3+qTfaFoD5guy3bOoji8ScZbxEg1KQbPSahSNnT7xY1CcmRDUfSS2Sbv99t8odstulsmoojUOlQvOnTeO5/VDapAly359u1vli6q1nh8IsLicj/U61kPQWNSw0XaNfPfTZrKLwkFyPIU+pMND08thQuuOB1y41tt6QiXW+xRg/CABJJNwVtYUmNEknOn/+lz2vB9q9H5UuL2xeMJ5M2yHzN2sxWOfM0g+Na4EuzuvaW4rZvuQhrViJuBwPBYhOdD5waqTeVEIj89N0+OvNJ8asYOaUAJlsvJ5v/XXnzoOEIOq4gZ4Ze+0eECLCLCEtS1JNj1EAKAryaFle53Fpy+Fw/HAnV+rb3WulvT/s2pfddOS7wB9vPDdu560z3PH1VGStjqUz1CqHaQUDZlkVsimVyvDea2Yol7Khq2Bx+cwrA0Z3dLSF0IZNsOWfaxkUSza+fmii4kNh7bgl/GRmXhmWhXPWVZSF5Es7cgDQHf2xs+Dc8y0s+2JrOj16RQgCAl6NcGm9k0mBWEya3rY9rz6xzRRW0wF7zt3i2JK1pkN7sOHpV/dbtG0EpjtTNz/9VOr41r8AUCT7VzhLGaOIRNzuA19ucUPB97nk2cjT5YJoarhALM+xnmjvUR3gEIKAELEq26eLxTwAsP6dkx90vHvyHGOM/udRq7mewiwuqxvmRGpMPQ64HRc/fuwRMCEDCSDSx6v13W3O0n/sTAD64CAnhuSXinIBAMEkBCL9zu2Q1UwItU8AgFJ226UyFwBE+EZiWbu0JkLWVZn+Ci9/7nHKxwBAVedWp0DuvJ8ZExR3UQV/Aw+Hh+ti4FrPAAAAAElFTkSuQmCC">
+</head>
+<body>
+
+<div class="bg-orb bg-orb-1"></div>
+<div class="bg-orb bg-orb-2"></div>
+<div class="bg-orb bg-orb-3"></div>
+<div class="toast" id="toast"></div>
+
+<button class="mode-toggle" onclick="toggleAuthMode()" title="تغيير المظهر">
+  <svg class="moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+  <svg class="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+</button>
+<div class="container">
+
+  <div class="logo">
+    <div class="logo-icon" style="background:transparent;box-shadow:none;border:none;padding:0;width:96px;height:96px;"><img src="data:image/png;base64,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" width="96" height="96" style="display:block;" alt="HasibPro"></div>
+    <div class="logo-title">HasibPro</div>
+    <div class="logo-sub">E-Commerce Profit Calculator</div>
+  </div>
+
+  <div class="card">
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" id="tab-login" onclick="switchTab('login')">🔓 دخول</button>
+      <button class="tab-btn" id="tab-signup" onclick="switchTab('signup')">✨ حساب جديد</button>
+    </div>
+
+    <!-- Messages -->
+    <div class="msg msg-error" id="msgError"></div>
+    <div class="msg msg-success" id="msgSuccess"></div>
+
+    <!-- Login Form -->
+    <div id="formLogin">
+      <div class="form-group">
+        <label class="form-label">📧 البريد الإلكتروني</label>
+        <input class="form-input" type="email" id="loginEmail" placeholder="example@gmail.com" dir="ltr">
+      </div>
+      <div class="form-group">
+        <label class="form-label">🔒 كلمة المرور</label>
+        <input class="form-input" type="password" id="loginPassword" placeholder="••••••••" dir="ltr" onkeypress="if(event.key==='Enter')doLogin()">
+      </div>
+      <button class="btn-submit" id="btnLogin" onclick="doLogin()">
+        🚀 دخول للحاسبة
+      </button>
+    </div>
+
+    <!-- Signup Form -->
+    <div id="formSignup" style="display:none">
+      <div class="form-group">
+        <label class="form-label">👤 الاسم الكامل</label>
+        <input class="form-input" type="text" id="signupName" placeholder="محمد أمين">
+      </div>
+      <div class="form-group">
+        <label class="form-label">📧 البريد الإلكتروني</label>
+        <input class="form-input" type="email" id="signupEmail" placeholder="example@gmail.com" dir="ltr">
+      </div>
+      <div class="form-group">
+        <label class="form-label">🔒 كلمة المرور</label>
+        <input class="form-input" type="password" id="signupPassword" placeholder="8 أحرف على الأقل" dir="ltr">
+      </div>
+      <button class="btn-submit" id="btnSignup" onclick="doSignup()">
+        ✨ إنشاء حساب مجاني
+      </button>
+    </div>
+
+    <!-- Success Screen -->
+    <div class="success-screen" id="successScreen">
+      <div class="success-icon">✅</div>
+      <div class="success-title">تم التسجيل بنجاح!</div>
+      <div class="success-sub">
+        راسلنا على بريدك الإلكتروني لتأكيد حسابك<br>
+        بعد التأكيد يمكنك الدخول مباشرة
+      </div>
+      <button class="tab-btn" style="margin-top:16px;padding:10px 20px;display:inline-block" onclick="switchTab('login')">
+        ← الرجوع للدخول
+      </button>
+    </div>
+
+    <div class="divider" style="font-size:11px;font-weight:700;color:var(--text2);">✨ مميزات الحاسبة</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:12px;">
+      <div style="background:#060d1a;border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px;min-width:0;">
+        <span style="font-size:16px;flex-shrink:0;">🧮</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">حساب ربح دقيق</span>
+      </div>
+      <div style="background:#060d1a;border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px;min-width:0;">
+        <span style="font-size:16px;flex-shrink:0;">📊</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">تتبع شهري</span>
+      </div>
+      <div style="background:#060d1a;border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px;min-width:0;">
+        <span style="font-size:16px;flex-shrink:0;">📣</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">عائد الإعلانات</span>
+      </div>
+      <div style="background:#060d1a;border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px;min-width:0;">
+        <span style="font-size:16px;flex-shrink:0;">🤖</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">مساعد AI</span>
+      </div>
+      <div style="background:#060d1a;border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px;min-width:0;">
+        <span style="font-size:16px;flex-shrink:0;">💱</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">12 عملة</span>
+      </div>
+      <div style="background:#060d1a;border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px;min-width:0;">
+        <span style="font-size:16px;flex-shrink:0;">🏪</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">9 منصات</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    🔒 بياناتك محمية ومشفرة — جميع الحقوق محفوظة © 2025
+  </div>
+
+</div>
+
+<script>
+// ===== SUPABASE SETUP =====
+const SUPABASE_URL = 'https://cpvgvfulkakghjhhrdsm.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwdmd2ZnVsa2FrZ2hqaGhyZHNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3Mzc0ODgsImV4cCI6MjA5MDMxMzQ4OH0.eExcqSG8slZ3l2jhBtRBTqFLtZ_FmAgXbo28mhKIC4s';
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ===== CHECK IF ALREADY LOGGED IN =====
+window.addEventListener('DOMContentLoaded', async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    // المستخدم مسجل دخول — وجهه للـ dashboard
+    window.location.href = 'index.html';
+  }
+});
+
+// ===== SWITCH TABS =====
+function switchTab(tab) {
+  clearMessages();
+  const isLogin = tab === 'login';
+  document.getElementById('tab-login').classList.toggle('active', isLogin);
+  document.getElementById('tab-signup').classList.toggle('active', !isLogin);
+  document.getElementById('formLogin').style.display = isLogin ? 'block' : 'none';
+  document.getElementById('formSignup').style.display = !isLogin ? 'block' : 'none';
+  document.getElementById('successScreen').style.display = 'none';
+}
+
+// ===== CLEAR MESSAGES =====
+function clearMessages() {
+  document.getElementById('msgError').classList.remove('show');
+  document.getElementById('msgSuccess').classList.remove('show');
+}
+
+// ===== SHOW ERROR =====
+function showError(msg) {
+  const el = document.getElementById('msgError');
+  el.textContent = msg;
+  el.classList.add('show');
+  document.getElementById('msgSuccess').classList.remove('show');
+}
+
+// ===== SHOW SUCCESS MSG =====
+function showSuccess(msg) {
+  const el = document.getElementById('msgSuccess');
+  el.textContent = msg;
+  el.classList.add('show');
+  document.getElementById('msgError').classList.remove('show');
+}
+
+// ===== TOAST =====
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ===== SET LOADING =====
+function setLoading(btnId, loading, text) {
+  const btn = document.getElementById(btnId);
+  btn.disabled = loading;
+  btn.innerHTML = loading
+    ? `${text} <span class="spinner"></span>`
+    : text;
+}
+
+// ===== LOGIN =====
+async function doLogin() {
+  clearMessages();
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+
+  if (!email || !password) {
+    showError('⚠️ أدخل البريد الإلكتروني وكلمة المرور');
+    return;
+  }
+
+  setLoading('btnLogin', true, '⏳ جاري الدخول...');
+
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+
+  setLoading('btnLogin', false, '🚀 دخول للحاسبة');
+
+  if (error) {
+    if (error.message.includes('Invalid login')) {
+      showError('❌ البريد الإلكتروني أو كلمة المرور غلط');
+    } else if (error.message.includes('Email not confirmed')) {
+      showError('📧 خاصك تأكد بريدك الإلكتروني أولاً — شوف صندوق الوارد');
+    } else {
+      showError('❌ ' + error.message);
+    }
+    return;
+  }
+
+  showToast('✅ مرحباً بك!');
+  setTimeout(() => {
+    window.location.href = 'index.html';
+  }, 800);
+}
+
+// ===== SIGNUP =====
+async function doSignup() {
+  clearMessages();
+  const name = document.getElementById('signupName').value.trim();
+  const email = document.getElementById('signupEmail').value.trim();
+  const password = document.getElementById('signupPassword').value;
+
+  if (!name || !email || !password) {
+    showError('⚠️ أكمل جميع الحقول');
+    return;
+  }
+
+  if (password.length < 8) {
+    showError('⚠️ كلمة المرور خاصها 8 أحرف على الأقل');
+    return;
+  }
+
+  if (!email.includes('@')) {
+    showError('⚠️ البريد الإلكتروني غير صحيح');
+    return;
+  }
+
+  setLoading('btnSignup', true, '⏳ جاري إنشاء الحساب...');
+
+  const { data, error } = await sb.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { full_name: name }
+    }
+  });
+
+  setLoading('btnSignup', false, '✨ إنشاء حساب مجاني');
+
+  if (error) {
+    if (error.message.includes('already registered')) {
+      showError('⚠️ هاد البريد الإلكتروني مسجل بالفعل — ادخل من تبويب "دخول"');
+    } else {
+      showError('❌ ' + error.message);
+    }
+    return;
+  }
+
+  // Show success screen
+  document.getElementById('formSignup').style.display = 'none';
+  document.getElementById('successScreen').style.display = 'block';
+  document.getElementById('msgError').classList.remove('show');
+}
+
+function toggleAuthMode(){
+  document.body.classList.toggle('light');
+  localStorage.setItem('authTheme', document.body.classList.contains('light') ? 'light' : 'dark');
+}
+// Apply saved theme on load
+(function(){
+  const t = localStorage.getItem('authTheme');
+  if(t === 'light') document.body.classList.add('light');
+})();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>HasibPro — حاسبة أرباح التجارة الإلكترونية</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#0a0f1e;--bg2:#111827;--bg3:#1a2235;--card:#141d2e;--card2:#1e2a40;--border:#1f2d45;--teal:#00d4aa;--teal2:#00b894;--teal3:rgba(0,212,170,0.1);--blue:#3b82f6;--red:#ef4444;--yellow:#f59e0b;--green:#10b981;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--radius:14px;}
+body.light{--bg:#f1f5f9;--bg2:#ffffff;--bg3:#e2e8f0;--card:#ffffff;--card2:#f8fafc;--border:#cbd5e1;--text:#1e293b;--text2:#475569;--text3:#94a3b8;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background 0.3s,color 0.3s;}
+#appContent{display:none;}
+.header{background:linear-gradient(135deg,#0d1b2e,#0a1628);border-bottom:1px solid var(--border);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+body.light .header{background:linear-gradient(135deg,#1e3a5f,#1e40af);}
+.header-logo{display:flex;align-items:center;gap:9px;}
+.header-icon{width:44px;height:44px;border-radius:9px;background:linear-gradient(135deg,var(--teal),var(--blue));display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.header-title{font-size:13px;font-weight:800;color:#e2e8f0;line-height:1.2;}
+.header-sub{font-size:10px;color:#64748b;}
+.theme-btn{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:15px;color:var(--text);}
+.cur-bar{background:var(--bg2);border-bottom:1px solid var(--border);padding:6px 14px;display:flex;align-items:center;gap:8px;position:sticky;top:55px;z-index:99;}
+.cur-bar label{font-size:10px;color:var(--text3);font-weight:700;white-space:nowrap;}
+.cur-sel{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-family:'Cairo',sans-serif;font-size:11px;color:var(--text);flex:1;max-width:180px;}
+.cur-badge{background:var(--teal3);border:1px solid rgba(0,212,170,0.2);border-radius:6px;padding:3px 8px;font-size:11px;color:var(--teal);font-weight:700;white-space:nowrap;}
+.nav-tabs{display:grid;grid-template-columns:repeat(8,1fr);background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:83px;z-index:98;}
+.nav-tab{padding:6px 1px;font-family:'Cairo',sans-serif;font-size:7.5px;font-weight:700;color:var(--text3);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;line-height:1.2;}
+.nav-tab .ti{font-size:16px;display:flex;align-items:center;justify-content:center;width:20px;height:20px;}
+.nav-tab.active{color:var(--teal);border-bottom-color:var(--teal);background:linear-gradient(180deg,transparent,rgba(0,212,170,0.06));}
+.section{display:none;padding:13px 13px 80px 13px;max-width:900px;margin:0 auto;animation:fadeIn 0.3s ease;}
+.section.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.section{animation-duration:0.3s;}
+.section-title{font-size:17px;font-weight:900;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.tag{background:var(--teal3);color:var(--teal);border-radius:6px;padding:2px 7px;font-size:10px;font-weight:700;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:15px;margin-bottom:12px;transition:border-color 0.2s;}
+.card-title{font-size:12px;font-weight:700;color:var(--text2);margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+.kpi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px;}
+@media(min-width:500px){.kpi-grid{grid-template-columns:repeat(4,1fr);}}
+.kpi{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center;position:relative;overflow:hidden;}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--teal),var(--blue));}
+.kpi-label{font-size:9px;color:var(--text3);font-weight:600;margin-bottom:5px;}
+.kpi-value{font-size:20px;font-weight:900;color:var(--teal);letter-spacing:-0.5px;}
+.kpi-sub{font-size:9px;color:var(--text3);margin-top:2px;}
+.form-grid{display:grid;grid-template-columns:1fr;gap:8px;}
+@media(min-width:480px){.form-grid{grid-template-columns:1fr 1fr;}}
+.form-group{display:flex;flex-direction:column;gap:4px;}
+.form-label{font-size:10px;font-weight:700;color:var(--text2);}
+.form-input,.form-select{background:var(--bg3);border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-family:'Cairo',sans-serif;font-size:12px;color:var(--text);width:100%;direction:rtl;transition:border-color 0.2s;}
+.form-input:focus,.form-select:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 2px var(--teal3);}
+.full-w{grid-column:1/-1;}
+.fee-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;padding:10px;background:var(--bg3);border-radius:8px;}
+.fee-label{font-size:10px;color:var(--text3);font-weight:700;}
+.fee-inp{background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-family:'Cairo',sans-serif;font-size:12px;color:var(--text);width:70px;text-align:center;direction:ltr;}
+.fee-inp:focus{outline:none;border-color:var(--teal);}
+.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:12px;}
+.result-item{background:var(--bg3);border-radius:9px;padding:10px;display:flex;flex-direction:column;gap:3px;}
+.result-label{font-size:9px;color:var(--text3);font-weight:600;}
+.result-value{font-size:16px;font-weight:800;color:var(--text);}
+.result-value.green{color:var(--green);}
+.result-value.red{color:var(--red);}
+.result-value.teal{color:var(--teal);}
+.result-value.yellow{color:var(--yellow);}
+.alert-box{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:10px;padding:12px 14px;font-size:11px;color:#fca5a5;margin-bottom:10px;display:none;line-height:1.8;}
+.alert-box.show{display:block;}
+.btn{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;transition:all 0.2s;display:inline-flex;align-items:center;gap:5px;}
+.btn-primary{background:linear-gradient(135deg,var(--teal),var(--teal2));color:#000;box-shadow:0 4px 12px rgba(0,212,170,0.25);}
+.btn-primary:hover{opacity:0.9;transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,212,170,0.35);}
+.btn-secondary{background:var(--card2);color:var(--text);border:1px solid var(--border);}
+.btn-secondary:hover{border-color:var(--teal);color:var(--teal);}
+.btn-danger{background:rgba(239,68,68,0.12);color:var(--red);border:1px solid rgba(239,68,68,0.25);}
+.btn-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px;}
+.table-wrap{overflow-x:auto;border-radius:9px;border:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+th{background:var(--bg3);padding:9px 10px;text-align:right;font-weight:700;color:var(--text2);border-bottom:1px solid var(--border);white-space:nowrap;}
+td{padding:9px 10px;border-bottom:1px solid rgba(31,45,69,0.4);color:var(--text);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,0.015);}
+.td-input{background:transparent;border:1px solid transparent;border-radius:6px;padding:4px 6px;font-family:'Cairo',sans-serif;font-size:11px;color:var(--text);width:72px;text-align:center;}
+.td-input:focus{outline:none;border-color:var(--teal);background:var(--bg3);}
+.totals-row td{background:var(--bg3);font-weight:800;color:var(--teal);}
+.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:9px;font-weight:700;}
+.badge-green{background:rgba(16,185,129,0.15);color:var(--green);}
+.badge-red{background:rgba(239,68,68,0.15);color:var(--red);}
+.badge-yellow{background:rgba(245,158,11,0.15);color:var(--yellow);}
+.badge-teal{background:var(--teal3);color:var(--teal);}
+.compare-grid{display:grid;grid-template-columns:1fr;gap:9px;}
+@media(min-width:480px){.compare-grid{grid-template-columns:1fr 1fr 1fr;}}
+.compare-card{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:13px;}
+.compare-card.winner{border-color:var(--teal);background:rgba(0,212,170,0.04);}
+.ai-msgs{background:var(--bg3);border-radius:9px;padding:10px;height:260px;overflow-y:auto;margin-bottom:10px;display:flex;flex-direction:column;gap:8px;}
+.msg{padding:9px 12px;border-radius:9px;font-size:12px;line-height:1.6;max-width:88%;}
+.msg-user{background:var(--teal3);border:1px solid rgba(0,212,170,0.15);align-self:flex-start;}
+.msg-ai{background:var(--card2);border:1px solid var(--border);align-self:flex-end;}
+.msg-label{font-size:9px;color:var(--text3);margin-bottom:3px;font-weight:700;}
+.ai-row{display:flex;gap:7px;}
+.ai-inp{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'Cairo',sans-serif;font-size:12px;color:var(--text);direction:rtl;}
+.ai-inp:focus{outline:none;border-color:var(--teal);}
+.pricing-row{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:7px;}
+.pricing-row:hover{background:var(--bg3);}
+.divider{height:1px;background:var(--border);margin:2px 0;}
+.tips-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.tip{background:var(--bg3);border-radius:7px;padding:9px 11px;font-size:10px;color:var(--text2);}
+.tip strong{color:var(--teal);display:block;margin-bottom:2px;font-size:11px;}
+.chart-wrap{position:relative;height:190px;margin-top:10px;}
+@media(min-width:500px){.chart-wrap{height:230px;}}
+@media print{.header,.cur-bar,.nav-tabs,.btn,.btn-row{display:none!important;}.section{display:block!important;}body{background:#fff;color:#000;}.card{border:1px solid #ddd;}}
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:#1e2a40;border:1px solid var(--teal);border-radius:10px;padding:10px 20px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;color:var(--teal);z-index:9999;opacity:0;transition:all 0.3s;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.user-info{display:flex;align-items:center;gap:8px;}
+.user-name{font-size:10px;color:var(--teal);font-weight:700;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.logout-btn{background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.25);border-radius:7px;padding:5px 9px;cursor:pointer;font-size:10px;font-weight:700;color:var(--red);font-family:'Cairo',sans-serif;}
+.logout-btn:hover{background:rgba(239,68,68,0.2);}
+.plan-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:9px;font-weight:800;}
+.plan-free{background:rgba(100,116,139,0.2);color:#94a3b8;border:1px solid rgba(100,116,139,0.3);}
+.plan-pro{background:rgba(0,212,170,0.15);color:var(--teal);border:1px solid rgba(0,212,170,0.3);}
+.upgrade-banner{background:linear-gradient(135deg,rgba(0,212,170,0.08),rgba(59,130,246,0.08));border:1px solid rgba(0,212,170,0.2);border-radius:12px;padding:16px;text-align:center;margin-bottom:12px;}
+.upgrade-banner h3{font-size:14px;font-weight:800;color:var(--teal);margin-bottom:6px;}
+.upgrade-banner p{font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.6;}
+.btn-upgrade{background:linear-gradient(135deg,var(--teal),var(--blue));color:#000;padding:10px 24px;border-radius:10px;border:none;font-family:'Cairo',sans-serif;font-size:13px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
+.btn-upgrade:hover{opacity:0.9;transform:translateY(-1px);}
+.lock-overlay{position:relative;}
+.lock-overlay::after{content:'🔒 Pro';position:absolute;inset:0;background:rgba(10,15,30,0.85);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:var(--teal);z-index:10;backdrop-filter:blur(2px);}
+.pricing-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0;}
+@media(max-width:400px){.pricing-cards{grid-template-columns:1fr;}}
+.pricing-card{background:var(--card2);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:center;}
+.pricing-card.featured{border-color:var(--teal);background:rgba(0,212,170,0.04);position:relative;}
+.pricing-card.featured::before{content:'الأشهر';position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--teal);color:#000;font-size:9px;font-weight:800;padding:2px 10px;border-radius:10px;font-family:'Cairo',sans-serif;}
+.price-amount{font-size:28px;font-weight:900;color:var(--teal);margin:8px 0;}
+.price-period{font-size:10px;color:var(--text3);}
+.price-name{font-size:13px;font-weight:800;color:var(--text);margin-bottom:4px;}
+.price-features{list-style:none;text-align:right;margin:10px 0;font-size:10px;color:var(--text2);line-height:2;}
+.price-features li::before{content:'✓ ';color:var(--teal);font-weight:800;}
+.price-features li.no::before{content:'✗ ';color:var(--text3);}
+.price-features li.no{color:var(--text3);}
+
+.trial-bar{display:none;}
+.trial-bar.show{display:flex!important;}
+.save-indicator{font-size:9px;color:var(--text3);margin-right:4px;transition:all 0.3s;}
+.trial-banner{background:linear-gradient(135deg,rgba(245,158,11,0.12),rgba(239,68,68,0.08));border:1px solid rgba(245,158,11,0.3);border-radius:12px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.trial-banner-text{font-size:11px;color:var(--yellow);font-weight:700;}
+.trial-banner-sub{font-size:10px;color:var(--text3);margin-top:2px;}
+.trial-days{font-size:22px;font-weight:900;color:var(--yellow);line-height:1;}
+.feedback-form input,.feedback-form textarea,.feedback-form select{width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-family:'Cairo',sans-serif;font-size:12px;color:var(--text);direction:rtl;margin-bottom:10px;outline:none;resize:vertical;}
+.feedback-form input:focus,.feedback-form textarea:focus,.feedback-form select:focus{border-color:var(--teal);}
+.feedback-form textarea{min-height:90px;}
+.vote-item{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg3);border-radius:9px;margin-bottom:7px;}
+.vote-item-text{font-size:12px;color:var(--text2);}
+.vote-btn{background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:4px 12px;font-family:'Cairo',sans-serif;font-size:11px;font-weight:700;color:var(--text3);cursor:pointer;transition:all 0.2s;}
+.vote-btn.voted{background:var(--teal3);border-color:var(--teal);color:var(--teal);}
+.vote-btn:hover{border-color:var(--teal);color:var(--teal);}
+.vote-count{font-size:10px;color:var(--text3);margin-right:6px;}
+
+.save-indicator.saving{color:var(--yellow);}
+.save-indicator.saved{color:var(--green);}
+</style>
+<link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAADk0lEQVR42u1WW2gcVRj+zpmZvWWzbUIySaNRhFBDmoqhoIQ+bOLlwapBWyb0goK2VKkPEaVYqXK6wkqCgtonW7AorUF2UFARhIK7KyUUTVmpJg29Itm0TbNmN7vZmd2ZOXN8WF/EZrtNgvSh38t5Ofzf+b/vvxzgLu5YaDHp/yMTgtR6tbaLAiScYP/KoC8BNzK5gUAf5ADQufeb3qmjW08DECsnrIL7Wdwn5+xPYMq7mrOZ5tP6oAkIApCbEsu3ygwAnvme+e1m8qZDvF3c8E4Lw5+yc9I5K6+aTuaqm/ete1xGXcBwSp0AUmAgiNw8U1qNL5xgEggEV3PD0hrrPSEWw65S2ucEMMrrfSmhhqZ4SHqYSLZB/YW3YWXOa7GYhAhZUlZaXbAEAECRzValfN3+qTfaFoD5guy3bOoji8ScZbxEg1KQbPSahSNnT7xY1CcmRDUfSS2Sbv99t8odstulsmoojUOlQvOnTeO5/VDapAly359u1vli6q1nh8IsLicj/U61kPQWNSw0XaNfPfTZrKLwkFyPIU+pMND08thQuuOB1y41tt6QiXW+xRg/CABJJNwVtYUmNEknOn/+lz2vB9q9H5UuL2xeMJ5M2yHzN2sxWOfM0g+Na4EuzuvaW4rZvuQhrViJuBwPBYhOdD5waqTeVEIj89N0+OvNJ8asYOaUAJlsvJ5v/XXnzoOEIOq4gZ4Ze+0eECLCLCEtS1JNj1EAKAryaFle53Fpy+Fw/HAnV+rb3WulvT/s2pfddOS7wB9vPDdu560z3PH1VGStjqUz1CqHaQUDZlkVsimVyvDea2Yol7Khq2Bx+cwrA0Z3dLSF0IZNsOWfaxkUSza+fmii4kNh7bgl/GRmXhmWhXPWVZSF5Es7cgDQHf2xs+Dc8y0s+2JrOj16RQgCAl6NcGm9k0mBWEya3rY9rz6xzRRW0wF7zt3i2JK1pkN7sOHpV/dbtG0EpjtTNz/9VOr41r8AUCT7VzhLGaOIRNzuA19ucUPB97nk2cjT5YJoarhALM+xnmjvUR3gEIKAELEq26eLxTwAsP6dkx90vHvyHGOM/udRq7mewiwuqxvmRGpMPQ64HRc/fuwRMCEDCSDSx6v13W3O0n/sTAD64CAnhuSXinIBAMEkBCL9zu2Q1UwItU8AgFJ226UyFwBE+EZiWbu0JkLWVZn+Ci9/7nHKxwBAVedWp0DuvJ8ZExR3UQV/Aw+Hh+ti4FrPAAAAAElFTkSuQmCC">
+</head>
+<body>
+
+<div id="toast" class="toast"></div>
+
+<div id="loadingScreen" style="position:fixed;inset:0;z-index:9999;background:#0a0f1e;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;">
+  <img src="data:image/png;base64,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" width="90" height="90" style="border-radius:0;" alt="HasibPro">
+  <div style="width:36px;height:36px;border:3px solid rgba(0,212,170,0.2);border-top-color:#00d4aa;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+  <style>@keyframes spin{to{transform:rotate(360deg);}}</style>
+</div>
+
+<div id="appContent" style="display:none;">
+
+<div class="header">
+  <div class="header-logo">
+    <div style="display:flex;align-items:center;gap:9px;">
+      <div class="header-icon" style="width:44px;height:44px;padding:0;background:transparent;border:none;flex-shrink:0;"><img src="data:image/png;base64,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" width="44" height="44" style="display:block;" alt="HP"></div>
+      <div>
+        <div class="header-title" style="font-size:14px;font-weight:900;background:linear-gradient(135deg,#00d4aa,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">HasibPro</div>
+        <div class="header-sub">E-Commerce Profit Calculator</div>
+      </div>
+    </div>
+  </div>
+  </div>
+  <div class="user-info">
+    <span class="save-indicator" id="saveIndicator">●</span>
+    <span class="user-name" id="userName">...</span>
+    <span class="plan-badge plan-free" id="planBadge">Free</span>
+    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">🌙</button>
+    <button class="logout-btn" onclick="doLogout()">خروج</button>
+  </div>
+</div>
+
+<div id="trialBanner" class="trial-bar" style="background:linear-gradient(90deg,rgba(0,212,170,0.1),rgba(59,130,246,0.08));border-bottom:1px solid rgba(0,212,170,0.25);padding:8px 14px;align-items:center;justify-content:space-between;display:none;">
+  <div><div style="font-size:11px;font-weight:800;color:var(--teal)">⚡ تجربة Pro — <span id="trialDaysLeft">7</span> أيام متبقية</div><div style="font-size:10px;color:var(--text2)">استمتع بكل المميزات مجاناً</div></div>
+  <button onclick="goToPlans()" style="background:linear-gradient(135deg,var(--teal),var(--blue));color:#000;border:none;border-radius:8px;padding:6px 14px;font-family:'Cairo',sans-serif;font-size:11px;font-weight:800;cursor:pointer;box-shadow:0 2px 8px rgba(0,212,170,0.3);">اشترك الآن ⚡</button>
+</div>
+
+<div class="cur-bar">
+  <label>🌍 العملة:</label>
+  <select class="cur-sel" id="curSel" onchange="setCur()">
+    <option value="MAD">🇲🇦 درهم مغربي (MAD)</option>
+    <option value="SAR">🇸🇦 ريال سعودي (SAR)</option>
+    <option value="AED">🇦🇪 درهم إماراتي (AED)</option>
+    <option value="EGP">🇪🇬 جنيه مصري (EGP)</option>
+    <option value="USD">🇺🇸 دولار ($)</option>
+    <option value="EUR">🇪🇺 يورو (€)</option>
+    <option value="GBP">🇬🇧 جنيه إسترليني (£)</option>
+    <option value="TND">🇹🇳 دينار تونسي (TND)</option>
+    <option value="DZD">🇩🇿 دينار جزائري (DZD)</option>
+    <option value="QAR">🇶🇦 ريال قطري (QAR)</option>
+    <option value="KWD">🇰🇼 دينار كويتي (KWD)</option>
+    <option value="BHD">🇧🇭 دينار بحريني (BHD)</option>
+  </select>
+  <span class="cur-badge" id="curBadge">درهم MAD</span>
+</div>
+
+<div class="nav-tabs">
+  <button class="nav-tab active" onclick="showTab('dashboard',this)"><span class="ti"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>لوحة المعلومات</button>
+  <button class="nav-tab" onclick="showTab('calculator',this)"><span class="ti"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="12" x2="10" y2="12"/><line x1="14" y1="12" x2="16" y2="12"/><line x1="8" y1="17" x2="10" y2="17"/><line x1="14" y1="17" x2="16" y2="17"/></svg></span>حاسبة التكلفة</button>
+  <button class="nav-tab" onclick="showTab('comparison',this)"><span class="ti"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 3v18M16 3v18"/><path d="M3 8l5-5 5 5"/><path d="M21 16l-5 5-5-5"/></svg></span>مقارنة المنتجات</button>
+  <button class="nav-tab" onclick="showTab('monthly',this)"><span class="ti"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="15" x2="8" y2="15" stroke-width="2.5"/><line x1="12" y1="15" x2="12" y2="15" stroke-width="2.5"/><line x1="16" y1="15" x2="16" y2="15" stroke-width="2.5"/></svg></span>التتبع الشهري</button>
+  <button class="nav-tab" onclick="showTab('ads',this)"><span class="ti"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>عائد الإعلانات</button>
+  <button class="nav-tab" onclick="showTab('pricing',this)"><span class="ti"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 100 7h5a3.5 3.5 0 110 7H6"/></svg></span>حاسبة التسعير</button>
+  <button class="nav-tab" onclick="showTab('ai',this)"><span class="ti"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 2a4 4 0 014 4v1h1a3 3 0 013 3v6a3 3 0 01-3 3H7a3 3 0 01-3-3V10a3 3 0 013-3h1V6a4 4 0 014-4z"/><circle cx="9" cy="14" r="1" fill="currentColor"/><circle cx="15" cy="14" r="1" fill="currentColor"/><path d="M9 17s1 1.5 3 1.5 3-1.5 3-1.5"/></svg></span>المساعد الذكي</button>
+  <button class="nav-tab" onclick="showTab('feedback',this)"><span class="ti"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg></span>رأيك يهمنا</button>
+</div>
+
+<div class="section active" id="tab-dashboard">
+  <div class="section-title">🏠 لوحة المعلومات <span class="tag">نظرة شاملة</span></div>
+  <div class="kpi-grid">
+    <div class="kpi"><div class="kpi-label">إجمالي الإيرادات</div><div class="kpi-value" id="d-rev">0</div><div class="kpi-sub cur-lbl">درهم</div></div>
+    <div class="kpi"><div class="kpi-label">إجمالي التكاليف</div><div class="kpi-value" id="d-costs" style="color:var(--red)">0</div><div class="kpi-sub cur-lbl">درهم</div></div>
+    <div class="kpi"><div class="kpi-label">صافي الربح</div><div class="kpi-value" id="d-profit">0</div><div class="kpi-sub cur-lbl">درهم</div></div>
+    <div class="kpi"><div class="kpi-label">متوسط الهامش</div><div class="kpi-value" id="d-margin" style="color:var(--yellow)">0%</div><div class="kpi-sub">من الإيرادات</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span>📦</span> ملخص المنتج الأساسي</div>
+    <div class="result-grid">
+      <div class="result-item"><div class="result-label">سعر البيع</div><div class="result-value teal" id="d-price">0</div></div>
+      <div class="result-item"><div class="result-label">إجمالي التكاليف/وحدة</div><div class="result-value" id="d-ucost">0</div></div>
+      <div class="result-item"><div class="result-label">صافي الربح/وحدة</div><div class="result-value" id="d-uprof">0</div></div>
+      <div class="result-item"><div class="result-label">هامش الربح</div><div class="result-value" id="d-umann">0%</div></div>
+      <div class="result-item"><div class="result-label">وحدات التعادل</div><div class="result-value teal" id="d-brkev">0</div></div>
+      <div class="result-item"><div class="result-label">المنصة</div><div class="result-value teal" id="d-plat">-</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span>📈</span> اتجاه الأرباح الشهرية</div>
+    <div class="chart-wrap"><canvas id="dashChart"></canvas></div>
+  </div>
+</div>
+
+<div class="section" id="tab-calculator">
+  <div class="section-title">🧮 حاسبة تكلفة المنتج</div>
+  <div class="card">
+    <div class="card-title"><span>⚙️</span> إعدادات المنتج</div>
+    <div class="form-grid">
+      <div class="form-group full-w"><label class="form-label">اسم المنتج</label><input class="form-input" id="productName" placeholder="مثال: قميص قطني" oninput="calcProduct()"></div>
+      <div class="form-group full-w">
+        <label class="form-label">🌐 المنصة</label>
+        <select class="form-select" id="platform" onchange="onPlatChange()">
+          <option value="youcan">Youcan (المغرب)</option>
+          <option value="shopify">Shopify</option>
+          <option value="amazon">Amazon FBA</option>
+          <option value="etsy">Etsy</option>
+          <option value="tiktok">TikTok Shop</option>
+          <option value="woo">WooCommerce</option>
+          <option value="zid">Zid (السعودية)</option>
+          <option value="salla">Salla (السعودية)</option>
+          <option value="jumia">Jumia</option>
+          <option value="custom">⚙️ مخصص</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">💵 سعر البيع</label><input class="form-input" id="salePrice" type="number" value="199" oninput="calcProduct()"></div>
+      <div class="form-group"><label class="form-label">🏭 تكلفة المنتج</label><input class="form-input" id="productCost" type="number" value="60" oninput="calcProduct()"></div>
+      <div class="form-group"><label class="form-label">🚚 الشحن للعميل</label><input class="form-input" id="shipping" type="number" value="0" oninput="calcProduct()"></div>
+      <div class="form-group"><label class="form-label">📦 تكلفة التغليف</label><input class="form-input" id="packaging" type="number" value="5" oninput="calcProduct()"></div>
+      <div class="form-group"><label class="form-label">📱 تكلفة الإعلان/وحدة</label><input class="form-input" id="adCost" type="number" value="15" oninput="calcProduct()"></div>
+      <div class="form-group"><label class="form-label">🔄 تكاليف أخرى</label><input class="form-input" id="otherCost" type="number" value="5" oninput="calcProduct()"></div>
+    </div>
+    <div class="fee-row">
+      <span style="font-size:11px;color:var(--text2);font-weight:700;flex:1">⚙️ رسوم المنصة — عدّل حسب باقتك:</span>
+      <div style="display:flex;align-items:center;gap:5px;">
+        <span class="fee-label">العمولة:</span>
+        <input class="fee-inp" id="customPct" type="number" step="0.1" min="0" max="50" value="2" onchange="calcProduct()">
+        <span class="fee-label">%</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:5px;">
+        <span class="fee-label">ثابتة:</span>
+        <input class="fee-inp" id="customFix" type="number" step="0.1" min="0" value="0" onchange="calcProduct()">
+        <span class="fee-label cur-lbl">درهم</span>
+      </div>
+    </div>
+    <div id="platInfo" style="margin-top:6px;font-size:10px;color:var(--text3);padding:0 2px"></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span>📊</span> النتائج التلقائية</div>
+    <div class="alert-box" id="calcAlert"></div>
+    <div class="result-grid">
+      <div class="result-item"><div class="result-label">رسوم المنصة</div><div class="result-value red" id="r-fee">0</div></div>
+      <div class="result-item"><div class="result-label">إجمالي التكاليف</div><div class="result-value red" id="r-total">0</div></div>
+      <div class="result-item"><div class="result-label">صافي الربح/وحدة</div><div class="result-value" id="r-profit">0</div></div>
+      <div class="result-item"><div class="result-label">هامش الربح %</div><div class="result-value" id="r-margin">0%</div></div>
+      <div class="result-item"><div class="result-label">وحدات التعادل</div><div class="result-value teal" id="r-brkev">0</div></div>
+      <div class="result-item"><div class="result-label">ربح 100 وحدة</div><div class="result-value green" id="r-100">0</div></div>
+    </div>
+    <div class="chart-wrap" style="height:160px"><canvas id="costChart"></canvas></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="window.print()">🖨️ تصدير PDF</button>
+      <button class="btn btn-secondary" onclick="addToCompare()">⚖️ أضف للمقارنة</button>
+    </div>
+  </div>
+</div>
+
+<div class="section" id="tab-comparison">
+  <div class="section-title">⚖️ مقارنة المنتجات</div>
+  <div class="card">
+    <div class="card-title"><span>💡</span> قارن بين 3 منتجات لتعرف الأكثر ربحاً</div>
+    <div class="compare-grid">
+      <div class="compare-card" id="cp0"></div>
+      <div class="compare-card" id="cp1"></div>
+      <div class="compare-card" id="cp2"></div>
+    </div>
+    <div class="btn-row"><button class="btn btn-danger" onclick="clearCompare()">🗑️ مسح المقارنة</button></div>
+  </div>
+  <div class="card" id="compareChartCard" style="display:none">
+    <div class="card-title"><span>📊</span> مقارنة بصرية</div>
+    <div class="chart-wrap"><canvas id="compareChart"></canvas></div>
+  </div>
+</div>
+
+<div class="section" id="tab-monthly">
+  <div class="section-title">📅 التتبع الشهري</div>
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>الشهر</th><th>الوحدات</th><th>الإيرادات</th><th>التكاليف</th><th>صافي الربح</th><th>نمو %</th></tr></thead>
+        <tbody id="monthlyBody"></tbody>
+        <tfoot><tr class="totals-row"><td>الإجمالي</td><td id="t-un"></td><td id="t-rv"></td><td id="t-co"></td><td id="t-pr"></td><td>-</td></tr></tfoot>
+      </table>
+    </div>
+    <div class="chart-wrap" style="margin-top:12px"><canvas id="monthlyChart"></canvas></div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="window.print()">🖨️ تصدير PDF</button></div>
+  </div>
+</div>
+
+<div class="section" id="tab-ads">
+  <div class="section-title">📣 عائد الإعلانات</div>
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>المنصة</th><th>الإنفاق</th><th>الإيرادات</th><th>الوحدات</th><th>عائد الإنفاق</th><th>تكلفة/وحدة</th><th>الحالة</th></tr></thead>
+        <tbody id="adsBody"></tbody>
+        <tfoot><tr class="totals-row"><td>الإجمالي</td><td id="a-sp"></td><td id="a-rv"></td><td id="a-un"></td><td id="a-ro"></td><td id="a-cp"></td><td></td></tr></tfoot>
+      </table>
+    </div>
+    <div class="chart-wrap" style="margin-top:12px"><canvas id="adsChart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span>📖</span> دليل عائد الإنفاق الإعلاني</div>
+    <div class="tips-grid">
+      <div class="tip"><strong>🔴 أقل من 2x</strong>ضعيف — كتخسر فلوس</div>
+      <div class="tip"><strong>🟡 2x إلى 4x</strong>جيد — مربح، حسّن</div>
+      <div class="tip"><strong>🟢 أكثر من 4x</strong>ممتاز — وسّع الحملة</div>
+      <div class="tip"><strong>💡 الهدف</strong>ROAS 3x على الأقل</div>
+    </div>
+  </div>
+</div>
+
+<div class="section" id="tab-pricing">
+  <div class="section-title">💰 حاسبة التسعير</div>
+  <div class="card">
+    <div class="card-title"><span>🎯</span> الهامش المستهدف</div>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">الهامش المستهدف %</label><input class="form-input" id="targetMargin" type="number" value="35" oninput="calcPricing()"></div>
+      <div class="form-group"><label class="form-label">سعر المنافس (اختياري)</label><input class="form-input" id="competitorPrice" type="number" placeholder="250" oninput="calcPricing()"></div>
+    </div>
+    <div style="margin-top:9px;padding:9px;background:var(--bg3);border-radius:8px;font-size:10px;color:var(--text3)">
+      إجمالي التكاليف/وحدة: <span id="pricingCosts" style="color:var(--teal);font-weight:700">0</span> <span class="cur-lbl">درهم</span>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span>✨</span> السعر الموصى به</div>
+    <div style="text-align:center;padding:18px 0">
+      <div style="font-size:38px;font-weight:900;color:var(--teal)" id="p-rec">0</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px"><span class="cur-lbl">درهم</span> — السعر المثالي للهامش المستهدف</div>
+    </div>
+    <div class="result-grid">
+      <div class="result-item"><div class="result-label">الربح بهذا السعر</div><div class="result-value green" id="p-profit">0</div></div>
+      <div class="result-item"><div class="result-label">الهامش الفعلي</div><div class="result-value" id="p-margin">0%</div></div>
+      <div class="result-item"><div class="result-label">فجوة مع المنافس</div><div class="result-value" id="p-gap">-</div></div>
+      <div class="result-item"><div class="result-label">توصية</div><div class="result-value" id="p-note" style="font-size:10px">-</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span>⚡</span> نقاط سعر سريعة</div>
+    <div id="quickPrices"></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span>📖</span> دليل الهوامش</div>
+    <div class="tips-grid">
+      <div class="tip"><strong>🔴 أقل من 20%</strong>منطقة الخطر</div>
+      <div class="tip"><strong>🟡 20% - 40%</strong>صحي — توازن جيد</div>
+      <div class="tip"><strong>🟢 أكثر من 40%</strong>متميز</div>
+      <div class="tip"><strong>💡 الهدف</strong>30-40% بعد كل التكاليف</div>
+    </div>
+  </div>
+</div>
+
+<div class="section" id="tab-ai">
+  <div class="section-title">🤖 المساعد الذكي <span class="tag">Claude AI</span></div>
+
+  <!-- Pro Gate -->
+  <div id="aiGate" class="upgrade-banner" style="display:none">
+    <h3>🔒 ميزة Pro</h3>
+    <p>المساعد الذكي متاح فقط لمشتركي الخطة المدفوعة<br>احصل على تحليل AI لأرقامك وتوصيات فورية</p>
+    <button class="btn-upgrade" onclick="goToPlans()">
+      ⚡ ترقية للـ Pro
+    </button>
+  </div>
+
+  <!-- AI Chat (Pro only) -->
+  <div id="aiContent" style="display:none">
+    <div class="card">
+      <div class="card-title"><span>💬</span> تحدث مع مساعدك الذكي</div>
+      <div class="ai-msgs" id="aiMsgs">
+        <div class="msg msg-ai"><div class="msg-label">🤖 المساعد</div>مرحباً! أنا مساعدك الذكي للتجارة الإلكترونية — اسألني أي شي عن أرقامك 😊</div>
+      </div>
+      <div style="margin-bottom:8px;display:flex;flex-wrap:wrap;gap:5px;">
+        <button class="btn btn-secondary" style="font-size:10px;padding:5px 8px" onclick="quickAsk('حلل ربحية منتجي وأعطني توصيات')">📊 حلل ربحيتي</button>
+        <button class="btn btn-secondary" style="font-size:10px;padding:5px 8px" onclick="quickAsk('كيف أحسن هامش ربحي؟')">📈 تحسين الهامش</button>
+        <button class="btn btn-secondary" style="font-size:10px;padding:5px 8px" onclick="quickAsk('قيّم أداء إعلاناتي')">📣 تقييم الإعلانات</button>
+        <button class="btn btn-secondary" style="font-size:10px;padding:5px 8px" onclick="quickAsk('ما هو السعر المثالي لمنتجي؟')">💰 أفضل سعر</button>
+      </div>
+      <div class="ai-row">
+        <input class="ai-inp" id="aiInput" placeholder="اكتب سؤالك هنا..." onkeypress="if(event.key==='Enter')sendAI()">
+        <button class="btn btn-primary" onclick="sendAI()">إرسال ➤</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRICING -->
+<div class="section" id="tab-plans">
+  <div class="section-title">💎 الخطط والأسعار</div>
+
+  <div class="card">
+    <div class="card-title"><span>🎯</span> اختر خطتك</div>
+    <div class="pricing-cards">
+      <div class="pricing-card">
+        <div class="price-name">🆓 مجاني</div>
+        <div class="price-amount">0</div>
+        <div class="price-period">درهم / للأبد</div>
+        <ul class="price-features">
+          <li>حاسبة التكلفة</li>
+          <li>9 منصات</li>
+          <li>12 عملة</li>
+          <li>مقارنة المنتجات</li>
+          <li class="no">المساعد الذكي AI</li>
+          <li class="no">تتبع شهري غير محدود</li>
+          <li class="no">تصدير PDF متقدم</li>
+        </ul>
+        <div id="freePlanBtn"></div>
+      </div>
+      <div class="pricing-card featured">
+        <div class="price-name">⚡ Pro</div>
+        <div class="price-amount">49</div>
+        <div class="price-period">درهم / شهر</div>
+        <ul class="price-features">
+          <li>كل مميزات المجاني</li>
+          <li>🤖 مساعد AI ذكي</li>
+          <li>تتبع شهري كامل</li>
+          <li>تصدير PDF متقدم</li>
+          <li>أولوية في الدعم</li>
+          <li>مميزات جديدة أولاً</li>
+        </ul>
+        <div id="proPlanBtn"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span>💬</span> للاشتراك أو الاستفسار</div>
+    <div style="text-align:center;padding:10px 0">
+      <p style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.7">
+        للاشتراك في الخطة Pro أو لأي استفسار<br>تواصل معنا مباشرة عبر واتساب
+      </p>
+      <a href="https://wa.me/212602568191?text=مرحباً%2C+بغيت+نشترك+في+HasibPro+Pro"
+         target="_blank"
+         style="display:inline-flex;align-items:center;gap:8px;background:#25d366;color:#fff;padding:12px 24px;border-radius:12px;text-decoration:none;font-family:'Cairo',sans-serif;font-size:13px;font-weight:800;">
+        📲 تواصل عبر واتساب
+      </a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span>❓</span> أسئلة شائعة</div>
+    <div style="font-size:11px;color:var(--text2);line-height:2">
+      <p><strong style="color:var(--teal)">كيف أدفع؟</strong><br>عبر تحويل بنكي أو كاش — تواصل معنا على واتساب</p>
+      <div class="divider" style="margin:10px 0"></div>
+      <p><strong style="color:var(--teal)">هل بياناتي محفوظة؟</strong><br>نعم، بياناتك محفوظة في السحابة — تصلها من أي جهاز</p>
+      <div class="divider" style="margin:10px 0"></div>
+      <p><strong style="color:var(--teal)">هل يمكن الإلغاء؟</strong><br>نعم، يمكنك الإلغاء في أي وقت بدون شروط</p>
+    </div>
+  </div>
+</div>
+
+<!-- FEEDBACK -->
+<div class="section" id="tab-feedback">
+  <div class="section-title">💬 رأيك يهمنا <span class="tag">شارك أفكارك</span></div>
+
+  <!-- Feature Voting -->
+  <div class="card">
+    <div class="card-title"><span>🗳️</span> صوت على الميزات القادمة</div>
+    <p style="font-size:11px;color:var(--text3);margin-bottom:12px">أي ميزة تبغا نزيدوها في التطبيق؟ صوتك يحدد الأولويات</p>
+    <div id="voteList">
+      <div class="vote-item"><span class="vote-item-text">📱 تطبيق موبايل (iOS/Android)</span><div style="display:flex;align-items:center"><span class="vote-count" id="vc-0">0</span><button class="vote-btn" id="vb-0" onclick="toggleVote(0)">👍 أصوت</button></div></div>
+      <div class="vote-item"><span class="vote-item-text">🔔 تقارير شهرية أوتوماتيكية</span><div style="display:flex;align-items:center"><span class="vote-count" id="vc-1">0</span><button class="vote-btn" id="vb-1" onclick="toggleVote(1)">👍 أصوت</button></div></div>
+      <div class="vote-item"><span class="vote-item-text">👥 حساب مشترك مع الشريك</span><div style="display:flex;align-items:center"><span class="vote-count" id="vc-2">0</span><button class="vote-btn" id="vb-2" onclick="toggleVote(2)">👍 أصوت</button></div></div>
+      <div class="vote-item"><span class="vote-item-text">📊 مقارنة مع المنافسين</span><div style="display:flex;align-items:center"><span class="vote-count" id="vc-3">0</span><button class="vote-btn" id="vb-3" onclick="toggleVote(3)">👍 أصوت</button></div></div>
+      <div class="vote-item"><span class="vote-item-text">🤖 AI يقترح منتجات رابحة</span><div style="display:flex;align-items:center"><span class="vote-count" id="vc-4">0</span><button class="vote-btn" id="vb-4" onclick="toggleVote(4)">👍 أصوت</button></div></div>
+      <div class="vote-item"><span class="vote-item-text">💳 دفع أوتوماتيك داخل التطبيق</span><div style="display:flex;align-items:center"><span class="vote-count" id="vc-5">0</span><button class="vote-btn" id="vb-5" onclick="toggleVote(5)">👍 أصوت</button></div></div>
+    </div>
+  </div>
+
+  <!-- Feedback Form -->
+  <div class="card">
+    <div class="card-title"><span>✍️</span> اقتراح أو ملاحظة</div>
+    <div class="feedback-form">
+      <select id="fbType">
+        <option value="">نوع الملاحظة...</option>
+        <option value="bug">🐛 مشكلة تقنية</option>
+        <option value="feature">💡 اقتراح ميزة جديدة</option>
+        <option value="improvement">✨ تحسين موجود</option>
+        <option value="other">💬 أخرى</option>
+      </select>
+      <input type="text" id="fbTitle" placeholder="عنوان قصير للاقتراح...">
+      <textarea id="fbMsg" placeholder="اشرح اقتراحك أو مشكلتك بالتفصيل..."></textarea>
+      <button class="btn btn-primary" style="width:100%" onclick="submitFeedback()">
+        إرسال الاقتراح ✉️
+      </button>
+    </div>
+  </div>
+
+  <!-- Rating -->
+  <div class="card">
+    <div class="card-title"><span>⭐</span> قيّم تجربتك</div>
+    <div style="text-align:center;padding:10px 0">
+      <div style="font-size:32px;letter-spacing:8px;cursor:pointer;" id="starRating">
+        <span onclick="setRating(1)" class="star">⭐</span>
+        <span onclick="setRating(2)" class="star">⭐</span>
+        <span onclick="setRating(3)" class="star">⭐</span>
+        <span onclick="setRating(4)" class="star">⭐</span>
+        <span onclick="setRating(5)" class="star">⭐</span>
+      </div>
+      <p style="font-size:11px;color:var(--text3);margin-top:8px" id="ratingText">اضغط لتقييم التطبيق</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== SUPABASE =====
+const SUPABASE_URL='https://cpvgvfulkakghjhhrdsm.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwdmd2ZnVsa2FrZ2hqaGhyZHNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3Mzc0ODgsImV4cCI6MjA5MDMxMzQ4OH0.eExcqSG8slZ3l2jhBtRBTqFLtZ_FmAgXbo28mhKIC4s';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let currentUserId=null;
+let saveTimer=null;
+
+// ===== CURRENCIES =====
+const CURRENCIES={
+  MAD:{sym:'درهم',locale:'ar-MA'},SAR:{sym:'ريال',locale:'ar-SA'},
+  AED:{sym:'د.إ',locale:'ar-AE'},EGP:{sym:'جنيه',locale:'ar-EG'},
+  USD:{sym:'$',locale:'en-US'},EUR:{sym:'€',locale:'fr-FR'},
+  GBP:{sym:'£',locale:'en-GB'},TND:{sym:'دينار',locale:'ar-TN'},
+  DZD:{sym:'دج',locale:'ar-DZ'},QAR:{sym:'ريال',locale:'ar-QA'},
+  KWD:{sym:'د.ك',locale:'ar-KW'},BHD:{sym:'د.ب',locale:'ar-BH'}
+};
+let curCode='MAD';
+
+function setCur(){
+  curCode=document.getElementById('curSel').value;
+  const c=CURRENCIES[curCode];
+  document.getElementById('curBadge').textContent=c.sym+' '+curCode;
+  document.querySelectorAll('.cur-lbl').forEach(el=>el.textContent=c.sym);
+  calcProduct();
+  saveState();
+}
+
+function fmt(n){
+  const c=CURRENCIES[curCode];
+  return(+n||0).toLocaleString(c.locale,{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+// ===== PLATFORMS =====
+const PLATS={
+  youcan:{name:'Youcan',pct:2,fix:0},shopify:{name:'Shopify',pct:2.9,fix:3},
+  amazon:{name:'Amazon FBA',pct:12,fix:0},etsy:{name:'Etsy',pct:6.5,fix:0},
+  tiktok:{name:'TikTok Shop',pct:6.5,fix:0},woo:{name:'WooCommerce',pct:2.9,fix:3},
+  zid:{name:'Zid',pct:2.5,fix:0},salla:{name:'Salla',pct:2.5,fix:0},
+  jumia:{name:'Jumia',pct:15,fix:0},custom:{name:'مخصص',pct:0,fix:0}
+};
+
+function onPlatChange(){
+  const k=document.getElementById('platform').value;
+  const p=PLATS[k];
+  document.getElementById('customPct').value=p.pct;
+  document.getElementById('customFix').value=p.fix;
+  const info=document.getElementById('platInfo');
+  if(k!=='custom')info.textContent=`${p.name}: عمولة ${p.pct}% + ${p.fix} ${CURRENCIES[curCode].sym} ثابتة — يمكنك تعديل الأرقام حسب باقتك`;
+  else info.textContent='أدخل العمولة يدوياً حسب منصتك';
+  calcProduct();
+}
+
+const MONTHS=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+let monthlyData=[{u:0,r:0,c:0},{u:0,r:0,c:0},{u:0,r:0,c:0},{u:0,r:0,c:0},{u:0,r:0,c:0},{u:0,r:0,c:0},{u:0,r:0,c:0},{u:0,r:0,c:0},{u:0,r:0,c:0},{u:0,r:0,c:0},{u:0,r:0,c:0},{u:0,r:0,c:0}];
+let adsData=[{p:'فيسبوك',sp:0,rv:0,un:0},{p:'جوجل',sp:0,rv:0,un:0},{p:'تيك توك',sp:0,rv:0,un:0}];
+let compareData=[null,null,null];
+let charts={};
+let isDark=true;
+
+function showTab(id,btn){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  if(btn)btn.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(id==='dashboard')updateDashboard();
+  if(id==='monthly')renderMonthly();
+  if(id==='ads')renderAds();
+  if(id==='pricing')calcPricing();
+  if(id==='plans')renderPlans();
+  if(id==='feedback'){initVotes();initRating();}
+  if(id==='ai'){
+    // Force AI visibility update when tab is clicked
+    setTimeout(()=>{
+      const aiGate=document.getElementById('aiGate');
+      const aiContent=document.getElementById('aiContent');
+      const isPro=(currentPlan==='pro')||(currentPlan==='trial');
+      if(aiGate) aiGate.style.display=isPro?'none':'block';
+      if(aiContent) aiContent.style.display=isPro?'block':'none';
+    },50);
+  }
+  if(id==='comparison')renderCompare();
+}
+
+function toggleTheme(){
+  isDark=!isDark;
+  document.body.classList.toggle('light',!isDark);
+  document.getElementById('themeBtn').textContent=isDark?'🌙':'☀️';
+  saveState();
+}
+
+function calcProduct(){
+  const pct=(+document.getElementById('customPct').value||0)/100;
+  const fix=+document.getElementById('customFix').value||0;
+  const sale=+document.getElementById('salePrice').value||0;
+  const cost=+document.getElementById('productCost').value||0;
+  const ship=+document.getElementById('shipping').value||0;
+  const pack=+document.getElementById('packaging').value||0;
+  const ad=+document.getElementById('adCost').value||0;
+  const oth=+document.getElementById('otherCost').value||0;
+  const fee=sale*pct+fix;
+  const total=cost+ship+pack+ad+oth+fee;
+  const prof=sale-total;
+  const marg=sale>0?prof/sale:0;
+  const brkev=prof>0?Math.ceil(total/prof):0;
+  setV('r-fee',fmt(fee),'red');setV('r-total',fmt(total),'red');
+  setV('r-profit',fmt(prof),prof>=0?'green':'red');
+  setV('r-margin',p2(marg),mCol(marg));
+  setV('r-brkev',brkev,'teal');setV('r-100',fmt(prof*100),'green');
+  const alerts=[];
+  if(prof<0)alerts.push('🔴 المنتج خاسر حالياً — راجع التكاليف');
+  if(marg<0.2&&sale>0)alerts.push('⚠️ هامش منخفض جداً ('+p2(marg)+')');
+  if(ad/sale>0.3&&sale>0)alerts.push('⚠️ تكلفة الإعلان عالية ('+p2(ad/sale)+' من السعر)');
+  const ab=document.getElementById('calcAlert');
+  if(alerts.length){ab.innerHTML=alerts.join('<br>');ab.classList.add('show');}else ab.classList.remove('show');
+  renderCostChart([cost,fee,ship,pack,ad,oth]);
+  window._lastTotalCost=total;
+  document.getElementById('pricingCosts').textContent=fmt(total);
+  saveState();
+}
+
+function mCol(m){return m<0.2?'red':m<0.4?'yellow':'green';}
+function p2(n){return((+n||0)*100).toFixed(1)+'%';}
+
+function renderCostChart(data){
+  const ctx=document.getElementById('costChart');if(!ctx)return;
+  if(charts.cost)charts.cost.destroy();
+  charts.cost=new Chart(ctx,{type:'doughnut',data:{labels:['المنتج','رسوم المنصة','الشحن','التغليف','الإعلان','أخرى'],datasets:[{data,backgroundColor:['#3b82f6','#ef4444','#f59e0b','#8b5cf6','#ec4899','#6b7280'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#94a3b8',font:{family:'Cairo',size:9},boxWidth:9}}}}});
+}
+
+function addToCompare(){
+  const pct=(+document.getElementById('customPct').value||0)/100;
+  const fix=+document.getElementById('customFix').value||0;
+  const sale=+document.getElementById('salePrice').value||0;
+  const fee=sale*pct+fix;
+  const total=(+document.getElementById('productCost').value||0)+(+document.getElementById('shipping').value||0)+(+document.getElementById('packaging').value||0)+(+document.getElementById('adCost').value||0)+(+document.getElementById('otherCost').value||0)+fee;
+  const prof=sale-total;const marg=sale>0?prof/sale:0;
+  const k=document.getElementById('platform').value;
+  const name=document.getElementById('productName').value||'منتج بدون اسم';
+  const idx=compareData.findIndex(c=>c===null);
+  if(idx===-1){showToast('⚠️ المقارنة ممتلئة — امسح منتجاً أولاً');return;}
+  compareData[idx]={name,sale,total,prof,marg,platform:PLATS[k].name};
+  showToast('✅ تمت الإضافة للمقارنة!');renderCompare();
+}
+
+function renderCompare(){
+  const filled=compareData.filter(c=>c!==null);
+  let winIdx=-1;
+  if(filled.length>=2)winIdx=compareData.reduce((b,c,i)=>{if(!c)return b;if(b===-1)return i;return c.marg>compareData[b].marg?i:b;},-1);
+  compareData.forEach((c,i)=>{
+    const el=document.getElementById('cp'+i);
+    if(!c){el.className='compare-card';el.innerHTML=`<div style="font-weight:800;font-size:12px;margin-bottom:6px">المنتج ${i+1} <span class="badge badge-teal">فارغ</span></div><div style="color:var(--text3);font-size:11px">أضف من حاسبة التكلفة</div>`;return;}
+    const win=(i===winIdx);
+    el.className='compare-card'+(win?' winner':'');
+    el.innerHTML=`<div style="font-weight:800;font-size:12px;margin-bottom:6px;display:flex;justify-content:space-between">${c.name} ${win?'<span class="badge badge-green">🏆 الأفضل</span>':''}</div><div style="font-size:10px;color:var(--text3);margin-bottom:8px">${c.platform}</div><div class="result-item" style="margin-bottom:5px"><div class="result-label">سعر البيع</div><div class="result-value teal">${fmt(c.sale)}</div></div><div class="result-item" style="margin-bottom:5px"><div class="result-label">صافي الربح/وحدة</div><div class="result-value ${c.prof>=0?'green':'red'}">${fmt(c.prof)}</div></div><div class="result-item"><div class="result-label">هامش الربح</div><div class="result-value ${mCol(c.marg)}">${p2(c.marg)}</div></div><button class="btn btn-danger" style="margin-top:8px;font-size:10px;padding:4px 7px" onclick="removeCompare(${i})">إزالة</button>`;
+  });
+  const show=filled.length>=2;
+  document.getElementById('compareChartCard').style.display=show?'block':'none';
+  if(show)renderCompareChart();
+}
+
+function removeCompare(i){compareData[i]=null;renderCompare();}
+function clearCompare(){compareData=[null,null,null];renderCompare();}
+
+function renderCompareChart(){
+  const ctx=document.getElementById('compareChart');if(!ctx)return;
+  if(charts.compare)charts.compare.destroy();
+  const filled=compareData.filter(c=>c);
+  charts.compare=new Chart(ctx,{type:'bar',data:{labels:filled.map(c=>c.name),datasets:[{label:'الربح/وحدة',data:filled.map(c=>+c.prof.toFixed(2)),backgroundColor:'rgba(0,212,170,0.7)',borderRadius:5},{label:'الهامش %',data:filled.map(c=>+(c.marg*100).toFixed(1)),backgroundColor:'rgba(59,130,246,0.7)',borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{family:'Cairo'}}}},scales:{x:{ticks:{color:'#94a3b8',font:{family:'Cairo'}},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#94a3b8',font:{family:'Cairo'}},grid:{color:'rgba(255,255,255,0.04)'}}}}});
+}
+
+function renderMonthly(){
+  const tbody=document.getElementById('monthlyBody');tbody.innerHTML='';
+  let tu=0,tr=0,tc=0,tp=0;
+  monthlyData.forEach((m,i)=>{
+    const prof=m.r-m.c;const prev=i>0?monthlyData[i-1].r-monthlyData[i-1].c:0;
+    const grow=i===0?'-':prev===0?'-':(((prof-prev)/Math.abs(prev))*100).toFixed(1)+'%';
+    const gc=grow==='-'?'':parseFloat(grow)>=0?'color:var(--green)':'color:var(--red)';
+    tbody.innerHTML+=`<tr><td>${MONTHS[i]}</td><td><input class="td-input" type="number" value="${m.u}" onchange="updM(${i},'u',this.value)"></td><td><input class="td-input" type="number" value="${m.r}" onchange="updM(${i},'r',this.value)"></td><td><input class="td-input" type="number" value="${m.c}" onchange="updM(${i},'c',this.value)"></td><td style="${prof>=0?'color:var(--green)':'color:var(--red)'};font-weight:700">${fmt(prof)}</td><td style="${gc}">${grow}</td></tr>`;
+    tu+=m.u;tr+=m.r;tc+=m.c;tp+=prof;
+  });
+  document.getElementById('t-un').textContent=tu;document.getElementById('t-rv').textContent=fmt(tr);document.getElementById('t-co').textContent=fmt(tc);document.getElementById('t-pr').textContent=fmt(tp);
+  renderMonthlyChart();
+  const drev=document.getElementById('d-rev');const dcosts=document.getElementById('d-costs');const dp=document.getElementById('d-profit');const dm=document.getElementById('d-margin');
+  if(drev)drev.textContent=fmt(tr);if(dcosts)dcosts.textContent=fmt(tc);
+  if(dp){dp.textContent=fmt(tp);dp.style.color=tp>=0?'var(--teal)':'var(--red)';}
+  if(dm)dm.textContent=tr>0?p2(tp/tr):'0%';
+}
+function updM(i,k,v){monthlyData[i][k]=+v;renderMonthly();saveState();}
+
+function renderMonthlyChart(){
+  const ctx=document.getElementById('monthlyChart');if(!ctx)return;
+  if(charts.monthly)charts.monthly.destroy();
+  const profs=monthlyData.map(m=>m.r-m.c);
+  charts.monthly=new Chart(ctx,{type:'line',data:{labels:MONTHS,datasets:[{label:'صافي الربح',data:profs,borderColor:'#00d4aa',backgroundColor:'rgba(0,212,170,0.08)',tension:0.4,fill:true,pointRadius:3},{label:'الإيرادات',data:monthlyData.map(m=>m.r),borderColor:'#3b82f6',tension:0.4,fill:false,pointRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{family:'Cairo',size:10}}}},scales:{x:{ticks:{color:'#94a3b8',font:{family:'Cairo',size:9}},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#94a3b8',font:{family:'Cairo',size:9}},grid:{color:'rgba(255,255,255,0.04)'}}}}});
+}
+
+function renderAds(){
+  const tbody=document.getElementById('adsBody');tbody.innerHTML='';
+  let tsp=0,trv=0,tun=0;
+  adsData.forEach((a,i)=>{
+    const roas=a.sp>0?(a.rv/a.sp).toFixed(2):0;const cpa=a.un>0?(a.sp/a.un).toFixed(2):0;
+    const badge=roas<2?'<span class="badge badge-red">ضعيف 🔴</span>':roas<4?'<span class="badge badge-yellow">جيد 🟡</span>':'<span class="badge badge-green">ممتاز 🟢</span>';
+    tbody.innerHTML+=`<tr><td style="font-weight:700">${a.p}</td><td><input class="td-input" type="number" value="${a.sp}" onchange="updA(${i},'sp',this.value)"></td><td><input class="td-input" type="number" value="${a.rv}" onchange="updA(${i},'rv',this.value)"></td><td><input class="td-input" type="number" value="${a.un}" onchange="updA(${i},'un',this.value)"></td><td style="font-weight:700;color:var(--teal)">${roas}x</td><td>${fmt(cpa)}</td><td>${badge}</td></tr>`;
+    tsp+=a.sp;trv+=a.rv;tun+=a.un;
+  });
+  const tr2=tsp>0?(trv/tsp).toFixed(2):0;const tc2=tun>0?(tsp/tun).toFixed(2):0;
+  document.getElementById('a-sp').textContent=fmt(tsp);document.getElementById('a-rv').textContent=fmt(trv);document.getElementById('a-un').textContent=tun;document.getElementById('a-ro').textContent=tr2+'x';document.getElementById('a-cp').textContent=fmt(tc2);
+  renderAdsChart();saveState();
+}
+function updA(i,k,v){adsData[i][k]=+v;renderAds();saveState();}
+
+function renderAdsChart(){
+  const ctx=document.getElementById('adsChart');if(!ctx)return;
+  if(charts.ads)charts.ads.destroy();
+  charts.ads=new Chart(ctx,{type:'bar',data:{labels:adsData.map(a=>a.p),datasets:[{label:'الإنفاق',data:adsData.map(a=>a.sp),backgroundColor:'rgba(239,68,68,0.7)',borderRadius:5},{label:'الإيرادات',data:adsData.map(a=>a.rv),backgroundColor:'rgba(16,185,129,0.7)',borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{family:'Cairo'}}}},scales:{x:{ticks:{color:'#94a3b8',font:{family:'Cairo'}},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#94a3b8',font:{family:'Cairo'}},grid:{color:'rgba(255,255,255,0.04)'}}}}});
+}
+
+function calcPricing(){
+  const total=window._lastTotalCost||0;
+  document.getElementById('pricingCosts').textContent=fmt(total);
+  const target=(+document.getElementById('targetMargin').value||35)/100;
+  const comp=+document.getElementById('competitorPrice').value||0;
+  const sym=CURRENCIES[curCode].sym;
+  if(total===0)return;
+  const rec=total/(1-target);const prof=rec-total;const marg=rec>0?prof/rec:0;
+  document.getElementById('p-rec').textContent=fmt(rec);document.getElementById('p-profit').textContent=fmt(prof);
+  setV('p-margin',p2(marg),mCol(marg));
+  if(comp>0){const gap=rec-comp;setV('p-gap',(gap>0?'+':'')+fmt(gap)+' '+sym,gap>0?'red':'green');document.getElementById('p-note').textContent=gap>0?'⚠️ سعرك أغلى من المنافس':'✅ سعرك تنافسي';}
+  else{document.getElementById('p-gap').textContent='-';document.getElementById('p-note').textContent='أدخل سعر المنافس للمقارنة';}
+  const qp=document.getElementById('quickPrices');
+  qp.innerHTML=['20%','30% (موصى به)','40%','50%'].map((l,i)=>{const m2=[0.2,0.3,0.4,0.5][i];return`<div class="pricing-row"><span style="font-size:12px;color:var(--text2)">${l}</span><span style="font-size:14px;font-weight:800;color:var(--teal)">${fmt(total/(1-m2))} ${sym}</span></div>${i<3?'<div class="divider"></div>':''}`;}).join('');
+}
+
+function updateDashboard(){
+  if(!document.getElementById('customPct'))return;
+  const pct=(+document.getElementById('customPct').value||0)/100;
+  const fix=+document.getElementById('customFix').value||0;
+  const sale=+document.getElementById('salePrice').value||0;
+  const fee=sale*pct+fix;
+  const total=(+document.getElementById('productCost').value||0)+(+document.getElementById('shipping').value||0)+(+document.getElementById('packaging').value||0)+(+document.getElementById('adCost').value||0)+(+document.getElementById('otherCost').value||0)+fee;
+  const prof=sale-total;const marg=sale>0?prof/sale:0;const brkev=prof>0?Math.ceil(total/prof):0;
+  const k=document.getElementById('platform').value;
+  const dp2=document.getElementById('d-price');if(dp2)dp2.textContent=fmt(sale);
+  const duc=document.getElementById('d-ucost');if(duc)duc.textContent=fmt(total);
+  setV('d-uprof',fmt(prof),prof>=0?'green':'red');setV('d-umann',p2(marg),mCol(marg));
+  const dbr=document.getElementById('d-brkev');if(dbr)dbr.textContent=brkev;
+  const dpl=document.getElementById('d-plat');if(dpl)dpl.textContent=PLATS[k].name;
+  renderDashChart();
+}
+
+function renderDashChart(){
+  const ctx=document.getElementById('dashChart');if(!ctx)return;
+  if(charts.dash)charts.dash.destroy();
+  const profs=monthlyData.map(m=>m.r-m.c);
+  charts.dash=new Chart(ctx,{type:'bar',data:{labels:MONTHS,datasets:[{label:'صافي الربح الشهري',data:profs,backgroundColor:profs.map(p=>p>=0?'rgba(0,212,170,0.7)':'rgba(239,68,68,0.7)'),borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{family:'Cairo'}}}},scales:{x:{ticks:{color:'#94a3b8',font:{family:'Cairo',size:8}},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#94a3b8',font:{family:'Cairo',size:8}},grid:{color:'rgba(255,255,255,0.04)'}}}}});
+}
+
+// ===== AI =====
+async function sendAI(){
+  const input=document.getElementById('aiInput');const msg=input.value.trim();if(!msg)return;
+  input.value='';addMsg(msg,'user');
+  const lid='l'+Date.now();addMsg('⏳ جاري التحليل...','ai',lid);
+  const k=document.getElementById('platform').value;
+  const systemPrompt='أنت مستشار خبير في التجارة الإلكترونية للسوق المغربي والعربي. أجب بالدارجة المغربية بشكل مختصر وعملي. بيانات المتجر: المنصة:'+PLATS[k].name+'|العملة:'+curCode+'|سعر:'+document.getElementById('salePrice').value+'|تكلفة:'+document.getElementById('productCost').value+'|هامش:'+document.getElementById('r-margin').textContent+'|ربح/وحدة:'+document.getElementById('r-profit').textContent;
+  try{
+    const r=await fetch('/api/chat',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        system: systemPrompt,
+        messages:[{role:'user',content:msg}]
+      })
+    });
+    if(!r.ok) throw new Error('Server error '+r.status);
+    const d=await r.json();
+    const txt=d.content?.[0]?.text;
+    document.getElementById(lid).innerHTML=`<div class="msg-label">🤖 المساعد</div>${txt||'لم يتوصل جواب — حاول مرة أخرى'}`;
+  }catch(e){
+    document.getElementById(lid).innerHTML=`<div class="msg-label">🤖 المساعد</div>⚠️ مشكل في الاتصال — تحقق من الإنترنت وحاول مرة أخرى`;
+    console.error('AI error:',e);
+  }
+}
+
+function quickAsk(q){document.getElementById('aiInput').value=q;sendAI();}
+function addMsg(text,type,id){
+  const msgs=document.getElementById('aiMsgs');const div=document.createElement('div');
+  div.className='msg msg-'+type;if(id)div.id=id;
+  div.innerHTML=type==='ai'?`<div class="msg-label">🤖 المساعد</div>${text}`:`<div class="msg-label">👤 أنت</div>${text}`;
+  msgs.appendChild(div);msgs.scrollTop=msgs.scrollHeight;
+}
+
+function setV(id,val,cls){const el=document.getElementById(id);if(!el)return;el.textContent=val;el.className='result-value';if(cls)el.classList.add(cls);}
+
+// ===== TOAST =====
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+
+// ===== PLAN MANAGEMENT =====
+let currentPlan = 'free';
+
+function updatePlanUI(plan) {
+  currentPlan = plan || 'free';
+  const isPro = (currentPlan === 'pro') || (currentPlan === 'trial');
+
+  // Update badge
+  const badge = document.getElementById('planBadge');
+  if(badge) {
+    badge.textContent = isPro ? '⚡ Pro' : 'Free';
+    badge.className = 'plan-badge ' + (isPro ? 'plan-pro' : 'plan-free');
+  }
+
+  // AI gate — force display with timeout to ensure DOM ready
+  setTimeout(() => {
+    const aiGate = document.getElementById('aiGate');
+    const aiContent = document.getElementById('aiContent');
+    if(aiGate) {
+      aiGate.style.cssText = isPro
+        ? 'display:none!important'
+        : 'display:block!important;background:linear-gradient(135deg,rgba(0,212,170,0.08),rgba(59,130,246,0.08));border:1px solid rgba(0,212,170,0.2);border-radius:12px;padding:16px;text-align:center;margin-bottom:12px;';
+    }
+    if(aiContent) {
+      aiContent.style.cssText = isPro ? 'display:block!important' : 'display:none!important';
+    }
+  }, 100);
+
+  // Pricing buttons
+  const freeBtn = document.getElementById('freePlanBtn');
+  const proBtn = document.getElementById('proPlanBtn');
+  if(freeBtn) freeBtn.innerHTML = isPro
+    ? '<span style="font-size:10px;color:var(--text3)">خطتك الحالية</span>'
+    : '<span style="font-size:10px;color:var(--teal);font-weight:700">✓ خطتك الحالية</span>';
+  if(proBtn) proBtn.innerHTML = isPro
+    ? '<span style="font-size:11px;color:var(--teal);font-weight:700">✓ مشترك</span>'
+    : '<button class="btn-upgrade" style="width:100%;justify-content:center;margin-top:6px;font-size:11px;padding:9px" onclick="document.querySelector(\'.pricing-card.featured .btn-upgrade\').click()">ترقية الآن ⚡</button>';
+}
+
+
+// ===== PLANS =====
+function goToPlans(){
+  // Hide all sections, show plans
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-plans').classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+  renderPlans();
+}
+
+function renderPlans(){
+  const isPro = currentPlan === 'pro';
+  const freeBtn = document.getElementById('freePlanBtn');
+  const proBtn = document.getElementById('proPlanBtn');
+  if(freeBtn) freeBtn.innerHTML = !isPro
+    ? '<span style="font-size:11px;color:var(--teal);font-weight:700;display:block;margin-top:8px">✓ خطتك الحالية</span>'
+    : '<span style="font-size:10px;color:var(--text3);display:block;margin-top:8px">الخطة المجانية</span>';
+  if(proBtn) proBtn.innerHTML = isPro
+    ? '<span style="font-size:11px;color:var(--teal);font-weight:700;display:block;margin-top:8px">✓ مشترك حالياً</span>'
+    : `<a href="https://wa.me/212602568191?text=مرحباً%2C+بغيت+نشترك+في+HasibPro+Pro" target="_blank" style="display:block;margin-top:8px;background:linear-gradient(135deg,#00d4aa,#3b82f6);color:#000;padding:10px;border-radius:10px;text-decoration:none;font-family:'Cairo',sans-serif;font-size:12px;font-weight:800;text-align:center;">⚡ اشترك الآن — 49 درهم/شهر</a>`;
+}
+
+
+// ===== FREE TRIAL =====
+function checkTrial(data) {
+  const now = new Date();
+
+  // 1. Pro حقيقي مدفوع
+  if(data && data.plan === 'pro') {
+    currentPlan = 'pro';
+    return;
+  }
+
+  // 2. مستخدم جديد بلا data أو بلا trial
+  if(!data || !data.trial_ends_at) {
+    currentPlan = 'trial';
+    const trialEnd = new Date();
+    trialEnd.setDate(trialEnd.getDate() + 7);
+    if(currentUserId) {
+      sb.from('user_data').upsert({
+        user_id: currentUserId,
+        trial_ends_at: trialEnd.toISOString(),
+        plan: 'trial',
+        monthly_data: [],
+        ads_data: [{p:'فيسبوك',sp:0,rv:0,un:0},{p:'جوجل',sp:0,rv:0,un:0},{p:'تيك توك',sp:0,rv:0,un:0}],
+        currency: 'MAD',
+        theme: 'dark',
+        updated_at: new Date().toISOString()
+      }, {onConflict:'user_id'});
+    }
+    setTimeout(() => showTrialBanner(7), 500);
+    return;
+  }
+
+  // 3. عندو trial_ends_at — نحسب كم يوم باقي
+  const trialEnd = new Date(data.trial_ends_at);
+  const daysLeft = Math.ceil((trialEnd - now) / (1000*60*60*24));
+
+  if(daysLeft > 0 && data.plan !== 'pro') {
+    currentPlan = 'trial';
+    setTimeout(() => showTrialBanner(daysLeft), 500);
+  } else if(data.plan !== 'pro') {
+    currentPlan = 'free';
+  }
+}
+
+function showTrialBanner(days) {
+  const banner = document.getElementById('trialBanner');
+  const daysEl = document.getElementById('trialDaysLeft');
+  if(banner && daysEl) {
+    daysEl.textContent = days;
+    banner.classList.add('show');
+  }
+}
+
+// ===== VOTES =====
+let userVotes = JSON.parse(localStorage.getItem('uv') || '[]');
+const voteCounts = JSON.parse(localStorage.getItem('vc') || '[0,0,0,0,0,0]');
+
+function toggleVote(idx) {
+  const btn = document.getElementById('vb-'+idx);
+  const countEl = document.getElementById('vc-'+idx);
+  if(!btn || !countEl) return;
+
+  if(userVotes.includes(idx)) {
+    userVotes = userVotes.filter(v => v !== idx);
+    voteCounts[idx] = Math.max(0, voteCounts[idx] - 1);
+    btn.classList.remove('voted');
+    btn.textContent = '👍 أصوت';
+  } else {
+    userVotes.push(idx);
+    voteCounts[idx]++;
+    btn.classList.add('voted');
+    btn.textContent = '✅ صوّتت';
+  }
+
+  countEl.textContent = voteCounts[idx] || '';
+  localStorage.setItem('uv', JSON.stringify(userVotes));
+  localStorage.setItem('vc', JSON.stringify(voteCounts));
+
+  // Save votes to Supabase
+  if(currentUserId) {
+    sb.from('user_data').upsert({
+      user_id: currentUserId,
+      calculator_data: {...(window._calcData||{}), votes: voteCounts},
+      updated_at: new Date().toISOString()
+    }, {onConflict:'user_id'});
+  }
+}
+
+function initVotes() {
+  voteCounts.forEach((count, i) => {
+    const countEl = document.getElementById('vc-'+i);
+    const btn = document.getElementById('vb-'+i);
+    if(countEl) countEl.textContent = count || '';
+    if(btn && userVotes.includes(i)) {
+      btn.classList.add('voted');
+      btn.textContent = '✅ صوّتت';
+    }
+  });
+}
+
+// ===== FEEDBACK FORM =====
+async function submitFeedback() {
+  const type = document.getElementById('fbType').value;
+  const title = document.getElementById('fbTitle').value.trim();
+  const msg = document.getElementById('fbMsg').value.trim();
+
+  if(!type || !title || !msg) {
+    showToast('⚠️ أكمل جميع الحقول');
+    return;
+  }
+
+  // Save feedback to Supabase as part of user data
+  const feedback = {
+    type, title, msg,
+    date: new Date().toISOString(),
+    user: currentUserId
+  };
+
+  // Store in localStorage as backup
+  const feedbacks = JSON.parse(localStorage.getItem('feedbacks') || '[]');
+  feedbacks.push(feedback);
+  localStorage.setItem('feedbacks', JSON.stringify(feedbacks));
+
+  // Send via WhatsApp to owner
+  const waMsg = `📋 اقتراح جديد من التطبيق:\n\nالنوع: ${type}\nالعنوان: ${title}\nالتفاصيل: ${msg}`;
+  window.open('https://wa.me/212602568191?text='+encodeURIComponent(waMsg), '_blank');
+
+  document.getElementById('fbType').value = '';
+  document.getElementById('fbTitle').value = '';
+  document.getElementById('fbMsg').value = '';
+  showToast('✅ شكراً! تم إرسال اقتراحك');
+}
+
+// ===== STAR RATING =====
+let currentRating = 0;
+function setRating(n) {
+  currentRating = n;
+  const stars = document.querySelectorAll('.star');
+  stars.forEach((s, i) => {
+    s.style.opacity = i < n ? '1' : '0.3';
+  });
+  const texts = ['', 'ضعيف 😞', 'مقبول 😐', 'جيد 🙂', 'زوين 😊', 'ممتاز! 🤩'];
+  const el = document.getElementById('ratingText');
+  if(el) el.textContent = texts[n];
+
+  localStorage.setItem('rating', n);
+  showToast('✅ شكراً على تقييمك!');
+}
+
+function initRating() {
+  const saved = localStorage.getItem('rating');
+  if(saved) setRating(+saved);
+}
+
+// ===== SAVE INDICATOR =====
+function setSaveStatus(status){
+  const el=document.getElementById('saveIndicator');
+  if(!el)return;
+  el.className='save-indicator '+status;
+  el.textContent=status==='saving'?'⏳':status==='saved'?'✓':'●';
+}
+
+// ===== SAVE TO SUPABASE =====
+async function saveState(){
+  if(!currentUserId)return;
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(async()=>{
+    setSaveStatus('saving');
+    const calcData={
+      productName:document.getElementById('productName')?.value||'',
+      platform:document.getElementById('platform')?.value||'youcan',
+      salePrice:document.getElementById('salePrice')?.value||'199',
+      productCost:document.getElementById('productCost')?.value||'60',
+      shipping:document.getElementById('shipping')?.value||'0',
+      packaging:document.getElementById('packaging')?.value||'5',
+      adCost:document.getElementById('adCost')?.value||'15',
+      otherCost:document.getElementById('otherCost')?.value||'5',
+      customPct:document.getElementById('customPct')?.value||'2',
+      customFix:document.getElementById('customFix')?.value||'0',
+    };
+    const {error}=await sb.from('user_data').upsert({
+      user_id:currentUserId,
+      monthly_data:monthlyData,
+      ads_data:adsData,
+      calculator_data:calcData,
+      currency:curCode,
+      theme:isDark?'dark':'light',
+      plan:currentPlan,
+      updated_at:new Date().toISOString()
+    },{onConflict:'user_id'});
+    setSaveStatus(error?'error':'saved');
+    if(!error)setTimeout(()=>setSaveStatus('idle'),2000);
+  },1500);
+}
+
+// ===== LOAD FROM SUPABASE =====
+async function loadState(){
+  if(!currentUserId)return;
+  const {data,error}=await sb.from('user_data').select('*').eq('user_id',currentUserId).single();
+  if(error||!data){checkTrial(null);return;}
+  if(data.monthly_data&&data.monthly_data.length===12)monthlyData=data.monthly_data;
+  if(data.ads_data&&data.ads_data.length>0)adsData=data.ads_data;
+  if(data.currency){curCode=data.currency;const sel=document.getElementById('curSel');if(sel)sel.value=curCode;const c=CURRENCIES[curCode];document.getElementById('curBadge').textContent=c.sym+' '+curCode;document.querySelectorAll('.cur-lbl').forEach(el=>el.textContent=c.sym);}
+  if(data.theme==='light'){isDark=false;document.body.classList.add('light');const tb=document.getElementById('themeBtn');if(tb)tb.textContent='☀️';}
+  checkTrial(data);
+  if(data.calculator_data){
+    const cd=data.calculator_data;
+    const fields=['productName','platform','salePrice','productCost','shipping','packaging','adCost','otherCost','customPct','customFix'];
+    fields.forEach(f=>{const el=document.getElementById(f);if(el&&cd[f]!==undefined)el.value=cd[f];});
+  }
+}
+
+// ===== LOGOUT =====
+async function doLogout(){
+  await sb.auth.signOut();
+  window.location.href='auth.html';
+}
+
+// ===== INIT APP =====
+function initApp(){
+  onPlatChange();calcProduct();renderMonthly();renderAds();updateDashboard();renderCompare();
+}
+
+// ===== MAIN =====
+window.addEventListener('DOMContentLoaded',async()=>{
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){window.location.href='auth.html';return;}
+  currentUserId=session.user.id;
+  // Show app FIRST so all DOM elements are accessible
+  document.getElementById('loadingScreen').style.display='none';
+  document.getElementById('appContent').style.display='block';
+  // Set user name
+  const name=session.user.user_metadata?.full_name||session.user.email?.split('@')[0]||'مستخدم';
+  const el=document.getElementById('userName');if(el)el.textContent=name;
+  // Load data then init
+  await loadState();
+  initApp();
+  // Small delay to ensure DOM fully rendered
+  setTimeout(() => updatePlanUI(currentPlan), 200);
+});
+</script>
+</body>
+</html>
