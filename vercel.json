@@ -1,7 +1,15 @@
 {
   "rewrites": [
-    { "source": "/ar", "destination": "/ar/index.html" }
-  ],
+    {
+      "source": "/app",
+      "destination": "/app.html"
+    },
+    {
+      "source": "/ar",
+      "destination": "/ar/index.html"
+    }
+  ]
+},
   "headers": [
     {
       "source": "/(.*)",
