@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HasibPro — آلة حاسبة أرباح التجارة الإلكترونية للعرب</title>
+<meta name="description" content="احسب أرباحك بدقة من سلة، زد، أمازون، تيك توك شوب وأكثر. أداة مالية ذكية للبائعين العرب.">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0f1e;
+  --bg2: #0e1628;
+  --card: #111827;
+  --card2: #141d2e;
+  --border: #1f2d45;
+  --teal: #00d4aa;
+  --teal2: #00b894;
+  --teal3: rgba(0,212,170,0.1);
+  --blue: #3b82f6;
+  --blue3: rgba(59,130,246,0.1);
+  --text: #e2e8f0;
+  --text2: #94a3b8;
+  --text3: #64748b;
+  --yellow: #f59e0b;
+  --green: #10b981;
+  --red: #ef4444;
+  --radius: 16px;
+  --grad: linear-gradient(135deg, var(--teal), var(--blue));
+}
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Cairo', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+/* ===== LANG BAR ===== */
+
+
+/* ===== NAVBAR ===== */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(10,15,30,0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+.logo-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 900;
+  color: #000;
+  flex-shrink: 0;
+}
+.logo-text {
+  font-size: 17px;
+  font-weight: 900;
+  color: var(--text);
+  line-height: 1;
+}
+.logo-sub {
+  font-size: 9px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.nav-link {
+  color: var(--text2);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+.nav-link:hover { color: var(--teal); background: var(--teal3); }
+.btn-nav {
+  background: var(--grad);
+  color: #000;
+  font-family: 'Cairo', sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 8px 18px;
+  border-radius: 9px;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s;
+  box-shadow: 0 4px 14px rgba(0,212,170,0.25);
+}
+.btn-nav:hover { opacity: 0.9; transform: translateY(-1px); }
+
+/* ===== HERO ===== */
+.hero {
+  padding: 80px 24px 70px;
+  text-align: center;
+  max-width: 860px;
+  margin: 0 auto;
+  position: relative;
+}
+.hero::before {
+  content: '';
+  position: fixed;
+  top: -200px;
+  right: -200px;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(0,212,170,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero::after {
+  content: '';
+  position: fixed;
+  bottom: -200px;
+  left: -200px;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(59,130,246,0.05) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--teal3);
+  border: 1px solid rgba(0,212,170,0.2);
+  border-radius: 30px;
+  padding: 5px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--teal);
+  margin-bottom: 26px;
+  animation: fadeUp 0.6s ease both;
+}
+.hero-title {
+  font-size: clamp(28px, 5vw, 46px);
+  font-weight: 900;
+  line-height: 1.3;
+  margin-bottom: 18px;
+  animation: fadeUp 0.6s ease 0.1s both;
+}
+.hero-title .grad {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero-sub {
+  font-size: clamp(13px, 2vw, 16px);
+  color: var(--text2);
+  line-height: 1.8;
+  max-width: 620px;
+  margin: 0 auto 36px;
+  animation: fadeUp 0.6s ease 0.2s both;
+}
+.hero-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  animation: fadeUp 0.6s ease 0.3s both;
+  margin-bottom: 50px;
+}
+.btn-hero {
+  background: var(--grad);
+  color: #000;
+  font-family: 'Cairo', sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  padding: 14px 30px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  box-shadow: 0 6px 24px rgba(0,212,170,0.3);
+  transition: all 0.2s;
+}
+.btn-hero:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,212,170,0.4); }
+.btn-hero-outline {
+  background: transparent;
+  color: var(--text2);
+  font-family: 'Cairo', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 13px 24px;
+  border-radius: 12px;
+  border: 1.5px solid var(--border);
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+.btn-hero-outline:hover { border-color: var(--teal); color: var(--teal); }
+.hero-note {
+  font-size: 11px;
+  color: var(--text3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  animation: fadeUp 0.6s ease 0.4s both;
+}
+.hero-note span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.hero-note span::before {
+  content: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>';
+  color: var(--teal);
+  font-weight: 800;
+}
+
+/* ===== PLATFORMS ===== */
+.platforms {
+  padding: 30px 24px;
+  text-align: center;
+  border-top: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.platforms-label {
+  font-size: 11px;
+  color: var(--text3);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-bottom: 18px;
+  text-transform: uppercase;
+}
+.platforms-list {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.platform-chip {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 30px;
+  padding: 7px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+.platform-chip:hover {
+  border-color: var(--teal);
+  color: var(--teal);
+  transform: translateY(-1px);
+}
+
+/* ===== STATS ===== */
+.stats {
+  padding: 60px 24px;
+  max-width: 860px;
+  margin: 0 auto;
+}
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+}
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px 20px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.stat-card:hover { border-color: rgba(0,212,170,0.3); transform: translateY(-3px); }
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--grad);
+}
+.stat-value {
+  font-size: 36px;
+  font-weight: 900;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.stat-label {
+  font-size: 12px;
+  color: var(--text2);
+  font-weight: 600;
+}
+
+/* ===== FEATURES ===== */
+.features {
+  padding: 70px 24px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.section-head {
+  text-align: center;
+  margin-bottom: 50px;
+}
+.section-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--blue3);
+  border: 1px solid rgba(59,130,246,0.2);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--blue);
+  margin-bottom: 14px;
+}
+.section-title {
+  font-size: clamp(22px, 4vw, 32px);
+  font-weight: 900;
+  line-height: 1.3;
+  margin-bottom: 12px;
+}
+.section-sub {
+  font-size: 14px;
+  color: var(--text2);
+  line-height: 1.7;
+  max-width: 560px;
+  margin: 0 auto;
+}
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+}
+.feature-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.feature-card:hover {
+  border-color: rgba(0,212,170,0.25);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.3);
+}
+.feature-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: var(--teal3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  margin-bottom: 14px;
+}
+.feature-card.blue .feature-icon { background: var(--blue3); }
+.feature-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 7px;
+}
+.feature-desc {
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.7;
+}
+.feature-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 12px;
+}
+.ftag {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 2px 9px;
+  font-size: 10px;
+  color: var(--text3);
+  font-weight: 600;
+}
+
+/* ===== HOW IT WORKS ===== */
+.how {
+  padding: 70px 24px;
+  background: linear-gradient(180deg, transparent, rgba(0,212,170,0.02), transparent);
+  border-top: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.how-inner { max-width: 860px; margin: 0 auto; }
+.steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-top: 50px;
+  position: relative;
+}
+.step {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 26px 20px;
+  text-align: center;
+  transition: all 0.2s;
+}
+.step:hover { border-color: rgba(0,212,170,0.3); transform: translateY(-3px); }
+.step-num {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--grad);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 900;
+  color: #000;
+  margin: 0 auto 16px;
+}
+.step-title {
+  font-size: 14px;
+  font-weight: 800;
+  margin-bottom: 7px;
+}
+.step-desc {
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.7;
+}
+
+/* ===== AI SECTION ===== */
+.ai-section {
+  padding: 70px 24px;
+  max-width: 860px;
+  margin: 0 auto;
+}
+.ai-card {
+  background: linear-gradient(135deg, rgba(0,212,170,0.05), rgba(59,130,246,0.05));
+  border: 1px solid rgba(0,212,170,0.15);
+  border-radius: 20px;
+  padding: 40px 36px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  align-items: center;
+}
+@media(max-width:600px){ .ai-card { grid-template-columns: 1fr; } }
+.ai-title {
+  font-size: clamp(20px, 3vw, 28px);
+  font-weight: 900;
+  line-height: 1.4;
+  margin-bottom: 14px;
+}
+.ai-desc {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.8;
+  margin-bottom: 20px;
+}
+.ai-points {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ai-points li {
+  font-size: 12px;
+  color: var(--text2);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  line-height: 1.6;
+}
+.ai-points li::before {
+  content: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>';
+  color: var(--teal);
+  font-weight: 900;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.ai-demo {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.ai-demo-header {
+  background: var(--card2);
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--teal);
+}
+.ai-demo-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ai-bubble {
+  padding: 10px 13px;
+  border-radius: 10px;
+  font-size: 11px;
+  line-height: 1.6;
+  max-width: 90%;
+}
+.ai-bubble.user {
+  background: var(--teal3);
+  border: 1px solid rgba(0,212,170,0.15);
+  align-self: flex-start;
+  color: var(--text);
+}
+.ai-bubble.bot {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  align-self: flex-end;
+  color: var(--text2);
+}
+
+/* ===== PRICING ===== */
+.pricing {
+  padding: 70px 24px;
+  background: linear-gradient(180deg, transparent, rgba(59,130,246,0.02), transparent);
+  border-top: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.pricing-inner { max-width: 700px; margin: 0 auto; }
+.pricing-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 50px;
+}
+@media(max-width:500px) { .pricing-cards { grid-template-columns: 1fr; } }
+.pricing-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 28px 24px;
+  position: relative;
+  transition: all 0.2s;
+}
+.pricing-card:hover { transform: translateY(-4px); }
+.pricing-card.featured {
+  border-color: var(--teal);
+  background: linear-gradient(145deg, rgba(0,212,170,0.05), var(--card));
+  box-shadow: 0 0 40px rgba(0,212,170,0.1);
+}
+.popular-badge {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--grad);
+  color: #000;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 14px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.plan-name {
+  font-size: 16px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+.plan-desc {
+  font-size: 11px;
+  color: var(--text3);
+  margin-bottom: 18px;
+  line-height: 1.6;
+}
+.plan-price {
+  font-size: 40px;
+  font-weight: 900;
+  color: var(--teal);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.plan-price .currency {
+  font-size: 16px;
+  font-weight: 700;
+  vertical-align: top;
+  margin-top: 8px;
+  display: inline-block;
+}
+.plan-price .period {
+  font-size: 13px;
+  color: var(--text3);
+  font-weight: 600;
+}
+.plan-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 18px 0;
+}
+.plan-features {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-bottom: 22px;
+}
+.plan-features li {
+  font-size: 12px;
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.plan-features li .check { color: var(--teal); font-weight: 800; flex-shrink: 0; }
+.plan-features li .cross { color: var(--text3); flex-shrink: 0; }
+.plan-features li.off { color: var(--text3); }
+.btn-plan {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  font-family: 'Cairo', sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  text-decoration: none;
+  display: block;
+  text-align: center;
+  transition: all 0.2s;
+}
+.btn-plan-primary {
+  background: var(--grad);
+  color: #000;
+  box-shadow: 0 4px 16px rgba(0,212,170,0.3);
+}
+.btn-plan-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+.btn-plan-outline {
+  background: transparent;
+  color: var(--text2);
+  border: 1.5px solid var(--border);
+}
+.btn-plan-outline:hover { border-color: var(--teal); color: var(--teal); }
+.pricing-note {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 12px;
+  color: var(--text3);
+  line-height: 1.7;
+}
+
+/* ===== TESTIMONIALS ===== */
+.testimonials {
+  padding: 70px 24px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.testi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+  margin-top: 50px;
+}
+.testi-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px;
+  transition: all 0.2s;
+}
+.testi-card:hover { border-color: rgba(0,212,170,0.2); transform: translateY(-2px); }
+.testi-stars {
+  color: var(--yellow);
+  font-size: 13px;
+  margin-bottom: 12px;
+  letter-spacing: 1px;
+}
+.testi-text {
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.8;
+  margin-bottom: 16px;
+}
+.testi-author {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.testi-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--grad);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.testi-name {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text);
+}
+.testi-role {
+  font-size: 10px;
+  color: var(--text3);
+  margin-top: 1px;
+}
+
+/* ===== FAQ ===== */
+.faq {
+  padding: 70px 24px;
+  max-width: 700px;
+  margin: 0 auto;
+  border-top: 1px solid rgba(255,255,255,0.04);
+}
+.faq-list {
+  margin-top: 50px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.faq-item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.faq-item:hover { border-color: rgba(0,212,170,0.2); }
+.faq-q {
+  padding: 16px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  user-select: none;
+}
+.faq-q::after {
+  content: '▾';
+  color: var(--teal);
+  font-size: 14px;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+.faq-item.open .faq-q::after { transform: rotate(180deg); }
+.faq-a {
+  display: none;
+  padding: 0 18px 16px;
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.8;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+.faq-item.open .faq-a { display: block; }
+
+/* ===== CTA ===== */
+.cta {
+  padding: 80px 24px;
+  text-align: center;
+}
+.cta-card {
+  max-width: 680px;
+  margin: 0 auto;
+  background: linear-gradient(135deg, rgba(0,212,170,0.07), rgba(59,130,246,0.07));
+  border: 1px solid rgba(0,212,170,0.15);
+  border-radius: 24px;
+  padding: 52px 40px;
+  position: relative;
+  overflow: hidden;
+}
+.cta-card::before {
+  content: '';
+  position: absolute;
+  top: -100px; left: 50%;
+  transform: translateX(-50%);
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(0,212,170,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+.cta-title {
+  font-size: clamp(22px, 4vw, 32px);
+  font-weight: 900;
+  line-height: 1.4;
+  margin-bottom: 14px;
+}
+.cta-sub {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.7;
+  max-width: 480px;
+  margin: 0 auto 32px;
+}
+.cta-btns {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ===== FOOTER ===== */
+footer {
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  padding: 36px 24px 24px;
+}
+.footer-inner {
+  max-width: 900px;
+  margin: 0 auto;
+}
+.footer-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 30px;
+  flex-wrap: wrap;
+  margin-bottom: 30px;
+}
+.footer-brand .logo-text { font-size: 20px; }
+.footer-desc {
+  font-size: 12px;
+  color: var(--text3);
+  line-height: 1.7;
+  max-width: 240px;
+  margin-top: 8px;
+}
+.footer-links h4 {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text2);
+  margin-bottom: 10px;
+}
+.footer-links a {
+  display: block;
+  font-size: 12px;
+  color: var(--text3);
+  text-decoration: none;
+  margin-bottom: 7px;
+  transition: color 0.2s;
+}
+.footer-links a:hover { color: var(--teal); }
+.footer-bottom {
+  border-top: 1px solid var(--border);
+  padding-top: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.footer-copy { font-size: 11px; color: var(--text3); }
+.footer-badges {
+  display: flex;
+  gap: 8px;
+}
+.footer-badge {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 10px;
+  color: var(--text3);
+  font-weight: 700;
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:600px) {
+  nav { padding: 10px 14px; }
+  .hero { padding: 50px 16px 50px; }
+  .nav-links { display: none; }
+  .cta-card { padding: 36px 22px; }
+  .ai-card { padding: 26px 20px; gap: 24px; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav>
+  <a href="#" class="nav-logo">
+    <div class="logo-icon" style="background:transparent;padding:0;"><img src="/logo.png" alt="HasibPro" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
+    <div>
+      <div class="logo-text">HasibPro</div>
+    </div>
+  </a>
+  <div class="nav-links">
+    <a href="#features" class="nav-link">المميزات</a>
+    <a href="#pricing" class="nav-link">الأسعار</a>
+    <a href="#faq" class="nav-link">الأسئلة الشائعة</a>
+    <a href="/auth.html" class="btn-nav">ابدأ مجاناً ←</a>
+  </div>
+  <a href="/auth.html" class="btn-nav" style="display:none" id="mobileBtn">ابدأ ←</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> تجربة مجانية 7 أيام — بلا بطاقة ائتمان</div>
+  <h1 class="hero-title">
+    احسب <span class="grad">أرباحك الحقيقية</span><br>
+    من متجرك الإلكتروني
+  </h1>
+  <p class="hero-sub">
+    أداة مالية ذكية مصممة خصيصاً للبائعين العرب. تعرّف على هامش ربحك الفعلي من سلة، زد، أمازون، تيك توك شوب، وأكثر — بدقة وسرعة.
+  </p>
+  <div class="hero-cta">
+    <a href="/auth.html" class="btn-hero"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/></svg> ابدأ تجربتك المجانية</a>
+    <a href="#features" class="btn-hero-outline">اكتشف المميزات ↓</a>
+  </div>
+  <div class="hero-note">
+    <span>مجاني لمدة 7 أيام</span>
+    <span>بلا بطاقة ائتمان</span>
+    <span>واجهة عربية 100%</span>
+    <span>حفظ سحابي آمن</span>
+  </div>
+</section>
+
+<!-- PLATFORMS -->
+<div class="platforms">
+  <div class="platforms-label">يدعم أشهر منصات البيع في العالم العربي</div>
+  <div class="platforms-list">
+    <div class="platform-chip">سلة</div>
+    <div class="platform-chip">زد</div>
+    <div class="platform-chip">أمازون</div>
+    <div class="platform-chip">تيك توك شوب</div>
+    <div class="platform-chip">Shopify</div>
+    <div class="platform-chip">WooCommerce</div>
+    <div class="platform-chip">Etsy</div>
+    <div class="platform-chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> Jumia</div>
+  </div>
+</div>
+
+<!-- STATS -->
+<section class="stats">
+  <div class="stats-grid">
+    <div class="stat-card reveal">
+      <div class="stat-value">8+</div>
+      <div class="stat-label">منصات بيع مدعومة</div>
+    </div>
+    <div class="stat-card reveal">
+      <div class="stat-value">10+</div>
+      <div class="stat-label">عملات عربية وعالمية</div>
+    </div>
+    <div class="stat-card reveal">
+      <div class="stat-value">7</div>
+      <div class="stat-label">أيام تجريب مجاني</div>
+    </div>
+    <div class="stat-card reveal">
+      <div class="stat-value">∞</div>
+      <div class="stat-label">حسابات في الخطة Pro</div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="section-head reveal">
+    <div class="section-tag"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> المميزات</div>
+    <h2 class="section-title">كل ما يحتاجه بائع التجارة الإلكترونية</h2>
+    <p class="section-sub">من حساب الأرباح إلى تتبع الإعلانات، حاسب برو يغطي كل جوانب عملك المالي</p>
+  </div>
+  <div class="features-grid">
+    <div class="feature-card reveal">
+      <div class="feature-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+      <div class="feature-title">حاسبة الربح الدقيقة</div>
+      <div class="feature-desc">أدخل سعر البيع، تكلفة المنتج، الشحن، والإعلانات — واحصل على صافي الربح فوراً مع هامش الربح المئوي.</div>
+      <div class="feature-tags">
+        <span class="ftag">سعر البيع</span>
+        <span class="ftag">تكلفة الشحن</span>
+        <span class="ftag">الإعلانات</span>
+      </div>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+      <div class="feature-title">التتبع الشهري</div>
+      <div class="feature-desc">تابع أداء متجرك شهراً بشهر، شاهد نمو مبيعاتك ببيانيات واضحة، وصدّر تقاريرك بصيغة PDF.</div>
+      <div class="feature-tags">
+        <span class="ftag">12 شهر</span>
+        <span class="ftag">رسوم بيانية</span>
+        <span class="ftag">تصدير PDF</span>
+      </div>
+    </div>
+    <div class="feature-card reveal blue">
+      <div class="feature-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+      <div class="feature-title">تحليل عائد الإعلانات</div>
+      <div class="feature-desc">قِس عائد إنفاقك الإعلاني (ROAS) على تيك توك، ميتا، وسناب شات. اعرف أي حملة مربحة وأيها خاسرة.</div>
+      <div class="feature-tags">
+        <span class="ftag">ROAS</span>
+        <span class="ftag">تكلفة/وحدة</span>
+        <span class="ftag">مقارنة منصات</span>
+      </div>
+    </div>
+    <div class="feature-card reveal blue">
+      <div class="feature-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+      <div class="feature-title">حاسبة التسعير</div>
+      <div class="feature-desc">حدد هامش الربح المستهدف وسيحسب لك التطبيق السعر الأمثل تلقائياً، مع مقارنة أسعار المنافسين.</div>
+      <div class="feature-tags">
+        <span class="ftag">هامش مستهدف</span>
+        <span class="ftag">سعر موصى به</span>
+      </div>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M12 22V12m0 0L5 7m7 5 7-5M3 17h6m6 0h6"/></svg></div>
+      <div class="feature-title">مقارنة المنتجات</div>
+      <div class="feature-desc">قارن ربحية منتجين أو أكثر جنباً إلى جنب، واتخذ قراراً مدروساً بشأن ما تبيع وما تتوقف عنه.</div>
+      <div class="feature-tags">
+        <span class="ftag">مقارنة بصرية</span>
+        <span class="ftag">رسم بياني</span>
+      </div>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+      <div class="feature-title">دعم العملات العربية</div>
+      <div class="feature-desc">ريال سعودي، درهم إماراتي، جنيه مصري، دينار كويتي وأكثر — كل العملات في متناول يدك.</div>
+      <div class="feature-tags">
+        <span class="ftag">SAR</span>
+        <span class="ftag">AED</span>
+        <span class="ftag">EGP</span>
+        <span class="ftag">KWD</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how">
+  <div class="how-inner">
+    <div class="section-head reveal">
+      <div class="section-tag"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg> كيف يعمل</div>
+      <h2 class="section-title">ثلاث خطوات فقط</h2>
+      <p class="section-sub">لا تعقيد، لا جداول Excel معقدة — فقط أرقام واضحة في ثوانٍ</p>
+    </div>
+    <div class="steps">
+      <div class="step reveal">
+        <div class="step-num">١</div>
+        <div class="step-title">أنشئ حسابك</div>
+        <div class="step-desc">سجّل مجاناً في ثوانٍ وابدأ تجربتك المجانية لـ 7 أيام فوراً بلا أي التزام.</div>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">٢</div>
+        <div class="step-title">أدخل بيانات منتجك</div>
+        <div class="step-desc">اختر المنصة، أدخل السعر والتكاليف، وحدد عمولة المنصة — في أقل من دقيقة.</div>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">٣</div>
+        <div class="step-title">اتخذ قراراتك بثقة</div>
+        <div class="step-desc">شاهد صافي ربحك، هامش الربح، وتوصيات الذكاء الاصطناعي لتحسين أرباحك.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AI SECTION -->
+<section class="ai-section">
+  <div class="ai-card reveal">
+    <div>
+      <div class="section-tag" style="margin-bottom:14px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4e8ef7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="15" x2="8" y2="15"/><line x1="16" y1="15" x2="16" y2="15"/></svg> مساعد ذكي</div>
+      <h2 class="ai-title">مستشارك المالي <span class="grad">بالذكاء الاصطناعي</span></h2>
+      <p class="ai-desc">اسأل المساعد الذكي أي سؤال عن أرباحك، استراتيجيات التسعير، أو تحسين هوامشك — ويجيبك بناءً على بيانات متجرك الفعلية.</p>
+      <ul class="ai-points">
+        <li>لماذا هامش ربحي منخفض هذا الشهر؟</li>
+        <li>ما هو السعر الأمثل لهذا المنتج؟</li>
+        <li>كيف أخفض تكاليف الشحن؟</li>
+        <li>أي منصة تحقق لي أعلى عائد؟</li>
+      </ul>
+    </div>
+    <div class="ai-demo">
+      <div class="ai-demo-header">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4e8ef7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="15" x2="8" y2="15"/><line x1="16" y1="15" x2="16" y2="15"/></svg> المساعد الذكي — HasibPro AI
+      </div>
+      <div class="ai-demo-body">
+        <div class="ai-bubble user">ما هو هامش ربحي الفعلي على منتجاتي؟</div>
+        <div class="ai-bubble bot">بناءً على بياناتك، هامش ربحك الصافي هو <strong style="color:var(--teal)">23%</strong>. لتحسينه، أنصحك بمراجعة تكاليف الشحن التي تمثل 18% من سعر البيع — وهي أعلى من المعدل المعتاد.</div>
+        <div class="ai-bubble user">كيف أحسّن هذا؟</div>
+        <div class="ai-bubble bot">يمكنك تجربة التفاوض مع شركة الشحن للحصول على سعر مخفض عند التعاقد الشهري، أو رفع سعر البيع بنسبة 8-10% مع إضافة قيمة مضافة للمنتج.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing" id="pricing">
+  <div class="pricing-inner">
+    <div class="section-head reveal">
+      <div class="section-tag"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="m2 12 2.5-5h15L22 12"/><path d="M2 12h20"/><path d="m5.5 7-3.5 5 10 9 10-9-3.5-5"/></svg> الأسعار</div>
+      <h2 class="section-title">خطط بسيطة وشفافة</h2>
+      <p class="section-sub">ابدأ مجاناً، وطوّر عملك مع الخطة الاحترافية</p>
+    </div>
+    <div class="pricing-cards">
+      <!-- FREE -->
+      <div class="pricing-card reveal">
+        <div class="plan-name">المجانية</div>
+        <div class="plan-desc">مثالية للبدء وتجربة التطبيق</div>
+        <div class="plan-price">
+          <span class="currency"></span>0
+          <span class="period">/دائماً</span>
+        </div>
+        <div class="plan-divider"></div>
+        <ul class="plan-features">
+          <li><span class="check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg></span> حاسبة الربح الأساسية</li>
+          <li><span class="check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg></span> دعم 3 منصات</li>
+          <li><span class="check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg></span> 5 عملات</li>
+          <li><span class="check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg></span> التتبع الشهري</li>
+          <li class="off"><span class="cross"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4a6080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span> تحليل الإعلانات</li>
+          <li class="off"><span class="cross"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4a6080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span> المساعد الذكي</li>
+          <li class="off"><span class="cross"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4a6080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span> مقارنة المنتجات</li>
+        </ul>
+        <a href="/auth.html" class="btn-plan btn-plan-outline">ابدأ مجاناً</a>
+      </div>
+      <!-- PRO -->
+      <div class="pricing-card featured reveal">
+        <div class="popular-badge">⭐ الأكثر شيوعاً</div>
+        <div class="plan-name" style="color:var(--teal)">الاحترافية Pro</div>
+        <div class="plan-desc">للبائعين الجادين الراغبين في النمو</div>
+        <div class="plan-price">
+          <span class="currency">$</span>9
+          <span class="period">/شهر</span>
+        </div>
+        <div class="plan-divider"></div>
+        <ul class="plan-features">
+          <li><span class="check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg></span> كل مميزات المجانية</li>
+          <li><span class="check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg></span> جميع المنصات (8+)</li>
+          <li><span class="check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg></span> كل العملات (10+)</li>
+          <li><span class="check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg></span> تحليل الإعلانات ROAS</li>
+          <li><span class="check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg></span> المساعد الذكي AI</li>
+          <li><span class="check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg></span> مقارنة منتجات غير محدودة</li>
+          <li><span class="check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg></span> تصدير PDF</li>
+        </ul>
+        <a href="/auth.html" class="btn-plan btn-plan-primary">ابدأ التجربة المجانية 7 أيام ←</a>
+      </div>
+    </div>
+    <div class="pricing-note">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> دفع آمن عبر واتساب · بالدولار الأمريكي · لا يلزم بطاقة ائتمان · يمكن الإلغاء في أي وقت
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials">
+  <div class="section-head reveal">
+    <div class="section-tag"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> آراء العملاء</div>
+    <h2 class="section-title">ماذا يقول البائعون عن حاسب برو</h2>
+  </div>
+  <div class="testi-grid">
+    <div class="testi-card reveal">
+      <div class="testi-stars"><span style="color:#f59e0b;letter-spacing:2px;font-size:13px;"></span></div>
+      <div class="testi-text">"أخيراً أعرف هامش ربحي الحقيقي! كنت أظن أن منتجي مربح وتبيّن أن الإعلانات كانت تأكل كل الأرباح. حاسب برو كشف لي الحقيقة."</div>
+      <div class="testi-author">
+        <div class="testi-avatar"></div>
+        <div>
+          <div class="testi-name">أحمد الغامدي</div>
+          <div class="testi-role">بائع على سلة · الرياض</div>
+        </div>
+      </div>
+    </div>
+    <div class="testi-card reveal">
+      <div class="testi-stars"><span style="color:#f59e0b;letter-spacing:2px;font-size:13px;"></span></div>
+      <div class="testi-text">"المساعد الذكي رائع! ساعدني في اتخاذ قرار رفع السعر بعد تحليل بياناتي. زادت أرباحي بـ 30% في شهر واحد."</div>
+      <div class="testi-author">
+        <div class="testi-avatar"></div>
+        <div>
+          <div class="testi-name">منى الزهراني</div>
+          <div class="testi-role">بائعة على زد · دبي</div>
+        </div>
+      </div>
+    </div>
+    <div class="testi-card reveal">
+      <div class="testi-stars"><span style="color:#f59e0b;letter-spacing:2px;font-size:13px;"></span></div>
+      <div class="testi-text">"واجهة بسيطة وسريعة. في 5 دقائق أعرف كل أرقامي. لا مزيد من جداول Excel المعقدة والأخطاء في الحسابات."</div>
+      <div class="testi-author">
+        <div class="testi-avatar"></div>
+        <div>
+          <div class="testi-name">محمد السيد</div>
+          <div class="testi-role">بائع على أمازون · القاهرة</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq" id="faq">
+  <div class="section-head reveal">
+    <div class="section-tag"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> الأسئلة الشائعة</div>
+    <h2 class="section-title">أجوبة على أسئلتك</h2>
+  </div>
+  <div class="faq-list">
+    <div class="faq-item reveal">
+      <div class="faq-q" onclick="toggleFaq(this)">هل حاسب برو مجاني؟</div>
+      <div class="faq-a">نعم، الخطة المجانية متاحة دائماً مع المميزات الأساسية. كما تحصل على تجربة مجانية كاملة لـ 7 أيام على خطة Pro عند التسجيل.</div>
+    </div>
+    <div class="faq-item reveal">
+      <div class="faq-q" onclick="toggleFaq(this)">ما العملات المدعومة؟</div>
+      <div class="faq-a">يدعم حاسب برو الريال السعودي (SAR)، الدرهم الإماراتي (AED)، الجنيه المصري (EGP)، الدينار الكويتي (KWD)، الدينار الأردني (JOD)، وأكثر من 10 عملات عربية وعالمية أخرى.</div>
+    </div>
+    <div class="faq-item reveal">
+      <div class="faq-q" onclick="toggleFaq(this)">هل بياناتي محفوظة وآمنة؟</div>
+      <div class="faq-a">نعم تماماً. تُحفظ بياناتك بأمان تام في السحابة عبر Supabase ولا تُشارك مع أي طرف ثالث. يمكنك الوصول إليها من أي جهاز في أي وقت.</div>
+    </div>
+    <div class="faq-item reveal">
+      <div class="faq-q" onclick="toggleFaq(this)">كيف يعمل المساعد الذكي؟</div>
+      <div class="faq-a">المساعد الذكي مبني على تقنية Claude AI من Anthropic. يحلل بياناتك الفعلية ويقدم توصيات مخصصة لتحسين ربحيتك وهوامشك.</div>
+    </div>
+    <div class="faq-item reveal">
+      <div class="faq-q" onclick="toggleFaq(this)">كيف يتم الدفع؟</div>
+      <div class="faq-a">الدفع يتم بشكل آمن عبر واتساب. بعد التسجيل وانتهاء فترة التجربة، ستتلقى رسالة على واتساب لإتمام الاشتراك بكل سهولة.</div>
+    </div>
+    <div class="faq-item reveal">
+      <div class="faq-q" onclick="toggleFaq(this)">هل يعمل مع Salla و Zid؟</div>
+      <div class="faq-a">بالتأكيد! حاسب برو يدعم سلة وزد بشكل كامل مع عمولات المنصة المُحسوبة تلقائياً. كما يدعم أمازون، شوبيفاي، تيك توك شوب، ووكوميرس، إيتسي، وجوميا.</div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta">
+  <div class="cta-card reveal">
+    <h2 class="cta-title">ابدأ اليوم — <span class="grad">مجاناً</span></h2>
+    <p class="cta-sub">انضم إلى مئات البائعين العرب الذين يعرفون الآن أرباحهم الحقيقية. 7 أيام مجانية، لا بطاقة ائتمان مطلوبة.</p>
+    <div class="cta-btns">
+      <a href="/auth.html" class="btn-hero"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/></svg> ابدأ تجربتك المجانية</a>
+      <a href="https://wa.me/212602568191" target="_blank" class="btn-hero-outline"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> تواصل معنا على واتساب</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <div class="nav-logo" style="margin-bottom:0">
+          <div class="logo-icon" style="width:36px;height:36px;background:transparent;padding:0;"><img src="/logo.png" alt="HasibPro" style="width:100%;height:100%;object-fit:contain;display:block;"></div>
+          <div class="logo-text">HasibPro</div>
+        </div>
+        <div class="footer-desc">أداة مالية ذكية لبائعي التجارة الإلكترونية العرب. احسب، تتبع، وطوّر أرباحك.</div>
+      </div>
+      <div class="footer-links">
+        <h4>المنصات</h4>
+        <a href="#">سلة</a>
+        <a href="#">زد</a>
+        <a href="#">أمازون</a>
+        <a href="#">تيك توك شوب</a>
+        <a href="#">Shopify</a>
+      </div>
+      <div class="footer-links">
+        <h4>روابط</h4>
+        <a href="#features">المميزات</a>
+        <a href="#pricing">الأسعار</a>
+        <a href="#faq">الأسئلة الشائعة</a>
+        <a href="/auth.html">تسجيل الدخول</a>
+      </div>
+      <div class="footer-links">
+        <h4>تواصل معنا</h4>
+        <a href="https://wa.me/212602568191" target="_blank"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> واتساب</a>
+        
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2025 HasibPro · جميع الحقوق محفوظة</div>
+      <div class="footer-badges">
+        <span class="footer-badge"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> آمن</span>
+        <span class="footer-badge"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> سحابي</span>
+        <span class="footer-badge"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4e8ef7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="15" x2="8" y2="15"/><line x1="16" y1="15" x2="16" y2="15"/></svg> AI</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Mobile nav btn
+window.addEventListener('load', () => {
+  const mBtn = document.getElementById('mobileBtn');
+  if(window.innerWidth <= 600) mBtn.style.display = 'inline-flex';
+});
+
+// FAQ Toggle
+function toggleFaq(el) {
+  const item = el.parentElement;
+  const wasOpen = item.classList.contains('open');
+  document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+  if(!wasOpen) item.classList.add('open');
+}
+
+// Scroll Reveal
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((entry, i) => {
+    if(entry.isIntersecting) {
+      setTimeout(() => entry.target.classList.add('visible'), i * 60);
+      observer.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
