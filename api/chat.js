@@ -1,5 +1,6 @@
-// api/chat.js — HasibPro + Google Gemini (مجاني)
-// 1500 request/يوم مجاناً
+// api/chat.js — HasibPro + Google Gemini
+// ضع هذا الملف في: /api/chat.js في مشروع Vercel
+// ثم أضف GEMINI_API_KEY في Vercel Environment Variables
 
 const store = new Map();
 
@@ -20,10 +21,14 @@ function sanitize(str, max = 2000) {
 
 export default async function handler(req, res) {
 
-  // CORS
-  // Allow any vercel.app domain + localhost
+  // CORS — أضف domain ديالك هنا
   const origin = req.headers.origin || '';
-  if (origin.includes('vercel.app') || origin.includes('localhost')) {
+  const allowed = [
+    'vercel.app',
+    'localhost',
+    'hasibpro.vercel.app', // غير هذا لـ domain ديالك
+  ];
+  if (allowed.some(d => origin.includes(d))) {
     res.setHeader('Access-Control-Allow-Origin', origin);
   }
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -40,18 +45,22 @@ export default async function handler(req, res) {
   if (!Array.isArray(messages) || messages.length === 0)
     return res.status(400).json({ error: 'بيانات غير صالحة' });
 
+  // تحويل messages من Anthropic format لـ Gemini format
   const cleanMessages = messages
-    .map(m => ({ role: m.role === 'model' ? 'model' : 'user', parts: [{ text: sanitize(m.content || '') }] }))
+    .map(m => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: sanitize(m.content || '') }]
+    }))
     .filter(m => m.parts[0].text.length > 0);
 
-  const cleanSystem = sanitize(system || '', 1000) ||
-    'أنت مستشار خبير في التجارة الإلكترونية. أجب بشكل مختصر وعملي.';
+  const cleanSystem = sanitize(system || '', 3000) ||
+    'أنت مستشار خبير في التجارة الإلكترونية للسوق المغربي والعربي. أجب بشكل مختصر وعملي.';
 
   const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
-  if (!apiKey) return res.status(500).json({ error: 'API key غير موجود' });
+  if (!apiKey) return res.status(500).json({ error: 'API key غير موجود في الإعدادات' });
 
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
     const response = await fetch(url, {
       method: 'POST',
@@ -75,7 +84,7 @@ export default async function handler(req, res) {
     const data = await response.json();
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-    // Return in same format as Anthropic for compatibility
+    // نفس format ديال Anthropic باش يتوافق مع app.html
     return res.status(200).json({
       content: [{ type: 'text', text }]
     });
