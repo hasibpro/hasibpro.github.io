@@ -1,6 +1,4 @@
 // api/chat.js — HasibPro + Google Gemini
-// ضع هذا الملف في: /api/chat.js في مشروع Vercel
-// ثم أضف GEMINI_API_KEY في Vercel Environment Variables
 
 const store = new Map();
 
@@ -21,16 +19,8 @@ function sanitize(str, max = 2000) {
 
 export default async function handler(req, res) {
 
-  // CORS — أضف domain ديالك هنا
   const origin = req.headers.origin || '';
-  const allowed = [
-    'vercel.app',
-    'localhost',
-    'hasibpro.vercel.app', // غير هذا لـ domain ديالك
-  ];
-  if (allowed.some(d => origin.includes(d))) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  }
+  res.setHeader('Access-Control-Allow-Origin', origin || '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -40,18 +30,28 @@ export default async function handler(req, res) {
   const ip = (req.headers['x-forwarded-for'] || 'unknown').split(',')[0].trim();
   if (!rateLimit(ip)) return res.status(429).json({ error: 'كثرت الطلبات — انتظر دقيقة' });
 
-  // Input validation
   const { messages, system } = req.body || {};
   if (!Array.isArray(messages) || messages.length === 0)
     return res.status(400).json({ error: 'بيانات غير صالحة' });
 
-  // تحويل messages من Anthropic format لـ Gemini format
+  // تحويل messages — يدعم string أو array في content
   const cleanMessages = messages
-    .map(m => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: sanitize(m.content || '') }]
-    }))
+    .map(m => {
+      let text = '';
+      if (typeof m.content === 'string') {
+        text = sanitize(m.content);
+      } else if (Array.isArray(m.content)) {
+        text = sanitize(m.content.map(c => c.text || '').join(' '));
+      }
+      return {
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text }]
+      };
+    })
     .filter(m => m.parts[0].text.length > 0);
+
+  if (cleanMessages.length === 0)
+    return res.status(400).json({ error: 'الرسالة فارغة' });
 
   const cleanSystem = sanitize(system || '', 3000) ||
     'أنت مستشار خبير في التجارة الإلكترونية للسوق المغربي والعربي. أجب بشكل مختصر وعملي.';
@@ -78,19 +78,18 @@ export default async function handler(req, res) {
     if (!response.ok) {
       const err = await response.text();
       console.error('[HasibPro] Gemini error:', response.status, err);
-      return res.status(502).json({ error: 'خطأ في خدمة AI — حاول مرة أخرى' });
+      return res.status(502).json({ error: 'خطأ في خدمة Gemini — حاول مرة أخرى' });
     }
 
     const data = await response.json();
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-    // نفس format ديال Anthropic باش يتوافق مع app.html
     return res.status(200).json({
       content: [{ type: 'text', text }]
     });
 
   } catch (err) {
     console.error('[HasibPro] Handler error:', err.message);
-    return res.status(500).json({ error: 'خطأ داخلي — تحقق من الإنترنت' });
+    return res.status(500).json({ error: 'خطأ داخلي: ' + err.message });
   }
 }
