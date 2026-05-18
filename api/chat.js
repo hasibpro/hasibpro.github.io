@@ -35,18 +35,15 @@ export default async function handler(req, res) {
   const cleanSystem = sanitize(system || '', 3000) ||
     'أنت مستشار خبير في التجارة الإلكترونية للسوق المغربي والعربي. أجب بشكل مختصر وعملي.';
 
-  // تحويل messages — ندمج system مع أول رسالة
+  // دمج system مع أول رسالة user
   const cleanMessages = messages
     .map((m, i) => {
       let text = '';
       if (typeof m.content === 'string') text = sanitize(m.content);
       else if (Array.isArray(m.content)) text = sanitize(m.content.map(c => c.text || '').join(' '));
-
-      // نضيف system prompt في أول رسالة user
       if (i === 0 && m.role === 'user') {
         text = cleanSystem + '\n\n---\n\n' + text;
       }
-
       return {
         role: m.role === 'assistant' ? 'model' : 'user',
         parts: [{ text }]
@@ -59,37 +56,50 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'GEMINI_API_KEY غير موجود في Environment Variables' });
   }
 
-  try {
-    // v1 بدون system_instruction
-    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+  // جرب كل الـ models بالترتيب
+  const models = [
+    'gemini-1.5-flash-latest',
+    'gemini-1.5-flash',
+    'gemini-1.5-pro-latest',
+    'gemini-pro',
+  ];
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: cleanMessages,
-        generationConfig: {
-          maxOutputTokens: 1000,
-          temperature: 0.7,
-        }
-      })
-    });
+  for (const model of models) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
 
-    if (!response.ok) {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: cleanMessages,
+          generationConfig: {
+            maxOutputTokens: 1000,
+            temperature: 0.7,
+          }
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        console.log(`[HasibPro] Success with: ${model}`);
+        return res.status(200).json({
+          content: [{ type: 'text', text }]
+        });
+      }
+
       const errText = await response.text();
-      console.error('[HasibPro] Gemini error:', response.status, errText);
-      return res.status(502).json({ error: 'خطأ في Gemini', details: errText.slice(0, 300) });
+      console.error(`[HasibPro] ${model} failed ${response.status}:`, errText.slice(0, 200));
+
+    } catch (err) {
+      console.error(`[HasibPro] ${model} exception:`, err.message);
     }
-
-    const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-
-    return res.status(200).json({
-      content: [{ type: 'text', text }]
-    });
-
-  } catch (err) {
-    console.error('[HasibPro] Handler error:', err.message);
-    return res.status(500).json({ error: 'خطأ داخلي: ' + err.message });
   }
+
+  // كل الـ models فشلوا
+  return res.status(502).json({ 
+    error: 'كل الـ models فشلوا — تحقق من Vercel Logs',
+    hint: 'تأكد أن GEMINI_API_KEY صحيح وأن Gemini API مفعّل في Google Cloud'
+  });
 }
