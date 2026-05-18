@@ -71,13 +71,18 @@ export default async function handler(req, res) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          system_instruction: { parts: [{ text: cleanSystem }] },
-          contents: cleanMessages,
-          generationConfig: {
-            maxOutputTokens: 1000,
-            temperature: 0.7,
-          }
-        })
+  contents: [
+    {
+      role: "user",
+      parts: [{ text: cleanSystem }]
+    },
+    ...cleanMessages
+  ],
+  generationConfig: {
+    maxOutputTokens: 1000,
+    temperature: 0.7
+  }
+})
       });
 
       // إذا نجح — رجع النتيجة
