@@ -1,4 +1,5 @@
 // api/chat.js — HasibPro + Google Gemini
+// FIX: استعمال v1beta بدل v1 + models الصحيحة
 
 const store = new Map();
 
@@ -56,17 +57,19 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'GEMINI_API_KEY غير موجود في Environment Variables' });
   }
 
-  // جرب كل الـ models بالترتيب
+  // FIX: v1beta هو الصحيح — v1 لا يدعم هاد الـ models
+  // FIX: models الصحيحة المتاحة في v1beta
   const models = [
-    'gemini-1.5-flash-latest',
+    'gemini-2.0-flash',
+    'gemini-2.0-flash-lite',
     'gemini-1.5-flash',
-    'gemini-1.5-pro-latest',
-    'gemini-pro',
+    'gemini-1.5-flash-8b',
   ];
 
   for (const model of models) {
     try {
-      const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
+      // FIX: v1beta بدل v1
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
       const response = await fetch(url, {
         method: 'POST',
@@ -90,16 +93,14 @@ export default async function handler(req, res) {
       }
 
       const errText = await response.text();
-      console.error(`[HasibPro] ${model} failed ${response.status}:`, errText.slice(0, 200));
+      console.error(`[HasibPro] ${model} failed ${response.status}:`, errText.slice(0, 300));
 
     } catch (err) {
       console.error(`[HasibPro] ${model} exception:`, err.message);
     }
   }
 
-  // كل الـ models فشلوا
-  return res.status(502).json({ 
-    error: 'كل الـ models فشلوا — تحقق من Vercel Logs',
-    hint: 'تأكد أن GEMINI_API_KEY صحيح وأن Gemini API مفعّل في Google Cloud'
+  return res.status(502).json({
+    error: 'خطأ في الاتصال بـ Gemini — تحقق من Vercel Logs'
   });
 }
