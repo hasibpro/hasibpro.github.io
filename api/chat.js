@@ -1,8 +1,4 @@
 // api/chat.js — HasibPro + Google Gemini
-// ROOT CAUSE FIX:
-// - v1beta (not v1) — v1 does NOT support these models
-// - NO system_instruction field (not supported in v1beta generateContent)
-// - System prompt merged into first user message
 
 const store = new Map();
 
@@ -37,69 +33,75 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'بيانات غير صالحة' });
 
   const cleanSystem = sanitize(system || '', 3000) ||
-    'أنت مستشار خبير في التجارة الإلكترونية للسوق المغربي والعربي. أجب بشكل مختصر وعملي باللغة التي يكتب بها المستخدم.';
+    'أنت مستشار خبير في التجارة الإلكترونية للسوق المغربي والعربي. أجب بشكل مختصر وعملي.';
 
-  // Merge system into first user message — only correct approach for v1beta
-  const cleanMessages = messages.map((m, i) => {
-    let text = '';
-    if (typeof m.content === 'string') text = sanitize(m.content);
-    else if (Array.isArray(m.content)) text = sanitize(m.content.map(c => c.text || '').join(' '));
-    // Prepend system to first user message
-    if (i === 0 && m.role === 'user') {
-      text = cleanSystem + '\n\n---\n\n' + text;
-    }
-    return {
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text }]
-    };
-  }).filter(m => m.parts[0].text.length > 0);
+  // Build contents array — system instruction handled separately via v1beta systemInstruction field
+  const cleanMessages = messages
+    .map((m) => {
+      let text = '';
+      if (typeof m.content === 'string') text = sanitize(m.content);
+      else if (Array.isArray(m.content)) text = sanitize(m.content.map(c => c.text || '').join(' '));
+      return {
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text }]
+      };
+    })
+    .filter(m => m.parts[0].text.length > 0);
 
   const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.GEMINI_KEY;
   if (!apiKey) {
-    console.error('[HasibPro] No API key in env vars');
-    return res.status(500).json({ error: 'GEMINI_API_KEY غير موجود' });
+    return res.status(500).json({ error: 'GEMINI_API_KEY غير موجود في Environment Variables' });
   }
 
-  // Use v1beta — the ONLY version that supports these models
-  // Do NOT use system_instruction — causes 400 error
-  const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + apiKey;
+  // جرب كل الـ models بالترتيب — v1beta supports all current Gemini models
+  const models = [
+    'gemini-2.0-flash',
+    'gemini-1.5-flash-latest',
+    'gemini-1.5-flash',
+    'gemini-1.5-pro-latest',
+    'gemini-1.5-pro',
+  ];
 
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: cleanMessages,
-        generationConfig: {
-          maxOutputTokens: 1000,
-          temperature: 0.7
-        }
-      })
-    });
+  for (const model of models) {
+    try {
+      // CRITICAL FIX: use v1beta instead of v1 — v1beta has all Gemini models available
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-    if (!response.ok) {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          systemInstruction: {
+            parts: [{ text: cleanSystem }]
+          },
+          contents: cleanMessages,
+          generationConfig: {
+            maxOutputTokens: 1000,
+            temperature: 0.7,
+          }
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        console.log(`[HasibPro] Success with: ${model}`);
+        return res.status(200).json({
+          content: [{ type: 'text', text }]
+        });
+      }
+
       const errText = await response.text();
-      console.error('[HasibPro] Gemini error:', response.status, errText.slice(0, 400));
-      return res.status(502).json({ error: 'خطأ في Gemini: ' + response.status });
+      console.error(`[HasibPro] ${model} failed ${response.status}:`, errText.slice(0, 200));
+
+    } catch (err) {
+      console.error(`[HasibPro] ${model} exception:`, err.message);
     }
-
-    const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-
-    if (!text) {
-      console.error('[HasibPro] Empty response from Gemini:', JSON.stringify(data).slice(0, 200));
-      return res.status(502).json({ error: 'Gemini رجع جواب فارغ' });
-    }
-
-    console.log('[HasibPro] Success — chars:', text.length);
-
-    // Return in Anthropic-compatible format (matches app.html parser)
-    return res.status(200).json({
-      content: [{ type: 'text', text }]
-    });
-
-  } catch (err) {
-    console.error('[HasibPro] Fetch exception:', err.message);
-    return res.status(500).json({ error: 'خطأ داخلي: ' + err.message });
   }
+
+  // كل الـ models فشلوا
+  return res.status(502).json({
+    error: 'كل الـ models فشلوا — تحقق من Vercel Logs',
+    hint: 'تأكد أن GEMINI_API_KEY صحيح وأن Gemini API مفعّل في Google Cloud'
+  });
 }
