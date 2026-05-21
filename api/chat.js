@@ -35,12 +35,15 @@ export default async function handler(req, res) {
   const cleanSystem = sanitize(system || '', 3000) ||
     'أنت مستشار خبير في التجارة الإلكترونية للسوق المغربي والعربي. أجب بشكل مختصر وعملي.';
 
-  // Build contents array — system instruction handled separately via v1beta systemInstruction field
+  // دمج system مع أول رسالة user
   const cleanMessages = messages
-    .map((m) => {
+    .map((m, i) => {
       let text = '';
       if (typeof m.content === 'string') text = sanitize(m.content);
       else if (Array.isArray(m.content)) text = sanitize(m.content.map(c => c.text || '').join(' '));
+      if (i === 0 && m.role === 'user') {
+        text = cleanSystem + '\n\n---\n\n' + text;
+      }
       return {
         role: m.role === 'assistant' ? 'model' : 'user',
         parts: [{ text }]
@@ -53,27 +56,21 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'GEMINI_API_KEY غير موجود في Environment Variables' });
   }
 
-  // جرب كل الـ models بالترتيب — v1beta supports all current Gemini models
+  // جرب كل الـ models بالترتيب
   const models = [
     'gemini-2.0-flash',
-    'gemini-1.5-flash-latest',
     'gemini-1.5-flash',
-    'gemini-1.5-pro-latest',
-    'gemini-1.5-pro',
+    'gemini-1.5-flash-8b',
   ];
 
   for (const model of models) {
     try {
-      // CRITICAL FIX: use v1beta instead of v1 — v1beta has all Gemini models available
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
       const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          systemInstruction: {
-            parts: [{ text: cleanSystem }]
-          },
           contents: cleanMessages,
           generationConfig: {
             maxOutputTokens: 1000,
@@ -100,7 +97,7 @@ export default async function handler(req, res) {
   }
 
   // كل الـ models فشلوا
-  return res.status(502).json({
+  return res.status(502).json({ 
     error: 'كل الـ models فشلوا — تحقق من Vercel Logs',
     hint: 'تأكد أن GEMINI_API_KEY صحيح وأن Gemini API مفعّل في Google Cloud'
   });
