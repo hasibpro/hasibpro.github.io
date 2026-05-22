@@ -1,4 +1,4 @@
-// api/chat.js — HasibPro + Google Gemini
+// api/chat.js — HasibPro + Google Gemini (Fixed)
 
 const store = new Map();
 
@@ -32,10 +32,15 @@ export default async function handler(req, res) {
   if (!Array.isArray(messages) || messages.length === 0)
     return res.status(400).json({ error: 'بيانات غير صالحة' });
 
+  const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.GEMINI_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ error: 'GEMINI_API_KEY غير موجود في Environment Variables' });
+  }
+
   const cleanSystem = sanitize(system || '', 3000) ||
     'أنت مستشار خبير في التجارة الإلكترونية للسوق المغربي والعربي. أجب بشكل مختصر وعملي.';
 
-  // دمج system مع أول رسالة user
+  // Build Gemini contents - merge system into first user message
   const cleanMessages = messages
     .map((m, i) => {
       let text = '';
@@ -51,25 +56,25 @@ export default async function handler(req, res) {
     })
     .filter(m => m.parts[0].text.length > 0);
 
-  const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.GEMINI_KEY;
-  if (!apiKey) {
-    return res.status(500).json({ error: 'GEMINI_API_KEY غير موجود في Environment Variables' });
-  }
-
-  // جرب كل الـ models بالترتيب
+  // Models to try in order — updated for 2025 availability
   const models = [
     'gemini-2.0-flash',
+    'gemini-2.0-flash-lite',
     'gemini-1.5-flash',
     'gemini-1.5-flash-8b',
   ];
 
   for (const model of models) {
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      // FIXED: use v1beta (not v1) + key in header (not query param)
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
       const response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey           // ← key in header, not URL
+        },
         body: JSON.stringify({
           contents: cleanMessages,
           generationConfig: {
@@ -82,23 +87,22 @@ export default async function handler(req, res) {
       if (response.ok) {
         const data = await response.json();
         const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        console.log(`[HasibPro] Success with: ${model}`);
+        console.log(`[HasibPro] Success: ${model}`);
         return res.status(200).json({
           content: [{ type: 'text', text }]
         });
       }
 
       const errText = await response.text();
-      console.error(`[HasibPro] ${model} failed ${response.status}:`, errText.slice(0, 200));
+      console.error(`[HasibPro] ${model} failed ${response.status}:`, errText.slice(0, 300));
 
     } catch (err) {
       console.error(`[HasibPro] ${model} exception:`, err.message);
     }
   }
 
-  // كل الـ models فشلوا
-  return res.status(502).json({ 
-    error: 'كل الـ models فشلوا — تحقق من Vercel Logs',
-    hint: 'تأكد أن GEMINI_API_KEY صحيح وأن Gemini API مفعّل في Google Cloud'
+  return res.status(502).json({
+    error: 'خدمة الذكاء الاصطناعي غير متاحة حالياً — حاول مرة أخرى',
+    hint: 'تأكد أن GEMINI_API_KEY صحيح وأن Gemini API مفعّل في Google AI Studio'
   });
 }
