@@ -1,10 +1,10 @@
-// api/chat.js — HasibPro + Google Gemini (Fixed)
+// api/chat.js — HasibPro + Groq (Free, Fast, Stable)
 
 const store = new Map();
 
 function rateLimit(ip) {
   const now = Date.now();
-  const rec  = store.get(ip) || { n: 0, t: now };
+  const rec = store.get(ip) || { n: 0, t: now };
   if (now - rec.t > 60000) { store.set(ip, { n: 1, t: now }); return true; }
   if (rec.n >= 15) return false;
   rec.n++; store.set(ip, rec); return true;
@@ -18,12 +18,11 @@ function sanitize(str, max = 2000) {
 }
 
 export default async function handler(req, res) {
-
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST')   return res.status(405).end();
+  if (req.method !== 'POST') return res.status(405).end();
 
   const ip = (req.headers['x-forwarded-for'] || 'unknown').split(',')[0].trim();
   if (!rateLimit(ip)) return res.status(429).json({ error: 'كثرت الطلبات — انتظر دقيقة' });
@@ -32,77 +31,78 @@ export default async function handler(req, res) {
   if (!Array.isArray(messages) || messages.length === 0)
     return res.status(400).json({ error: 'بيانات غير صالحة' });
 
-  const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.GEMINI_KEY;
-  if (!apiKey) {
-    return res.status(500).json({ error: 'GEMINI_API_KEY غير موجود في Environment Variables' });
-  }
+  // Try Groq first (free), then Gemini as fallback
+  const groqKey   = process.env.GROQ_API_KEY;
+  const geminiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
 
   const cleanSystem = sanitize(system || '', 3000) ||
     'أنت مستشار خبير في التجارة الإلكترونية للسوق المغربي والعربي. أجب بشكل مختصر وعملي.';
 
-  // Build Gemini contents - merge system into first user message
-  const cleanMessages = messages
-    .map((m, i) => {
-      let text = '';
-      if (typeof m.content === 'string') text = sanitize(m.content);
-      else if (Array.isArray(m.content)) text = sanitize(m.content.map(c => c.text || '').join(' '));
-      if (i === 0 && m.role === 'user') {
-        text = cleanSystem + '\n\n---\n\n' + text;
-      }
-      return {
-        role: m.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text }]
-      };
-    })
-    .filter(m => m.parts[0].text.length > 0);
+  const lastMsg = sanitize(messages[messages.length - 1]?.content || '');
 
-  // Models to try in order — updated for 2025 availability
-  const models = [
-    'gemini-2.0-flash',
-    'gemini-2.0-flash-lite',
-    'gemini-1.5-flash',
-    'gemini-1.5-flash-8b',
-  ];
-
-  for (const model of models) {
+  // ===== TRY GROQ (FREE) =====
+  if (groqKey) {
     try {
-      // FIXED: use v1beta (not v1) + key in header (not query param)
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
-
-      const response = await fetch(url, {
+      const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey           // ← key in header, not URL
+          'Authorization': `Bearer ${groqKey}`
         },
         body: JSON.stringify({
-          contents: cleanMessages,
-          generationConfig: {
-            maxOutputTokens: 1000,
-            temperature: 0.7,
-          }
+          model: 'llama-3.1-8b-instant',
+          messages: [
+            { role: 'system', content: cleanSystem },
+            { role: 'user',   content: lastMsg }
+          ],
+          max_tokens: 1000,
+          temperature: 0.7
         })
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        console.log(`[HasibPro] Success: ${model}`);
-        return res.status(200).json({
-          content: [{ type: 'text', text }]
-        });
+      if (groqRes.ok) {
+        const data = await groqRes.json();
+        const text = data.choices?.[0]?.message?.content || '';
+        console.log('[HasibPro] Success: Groq llama-3.1-8b-instant');
+        return res.status(200).json({ content: [{ type: 'text', text }] });
       }
-
-      const errText = await response.text();
-      console.error(`[HasibPro] ${model} failed ${response.status}:`, errText.slice(0, 300));
-
+      console.error('[HasibPro] Groq failed:', groqRes.status);
     } catch (err) {
-      console.error(`[HasibPro] ${model} exception:`, err.message);
+      console.error('[HasibPro] Groq exception:', err.message);
+    }
+  }
+
+  // ===== FALLBACK: GEMINI =====
+  if (geminiKey) {
+    const models = ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-flash'];
+    const contents = [{ role: 'user', parts: [{ text: cleanSystem + '\n\n' + lastMsg }] }];
+
+    for (const model of models) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+        const gRes = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': geminiKey },
+          body: JSON.stringify({
+            contents,
+            generationConfig: { maxOutputTokens: 1000, temperature: 0.7 }
+          })
+        });
+
+        if (gRes.ok) {
+          const data = await gRes.json();
+          const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          console.log(`[HasibPro] Success: Gemini ${model}`);
+          return res.status(200).json({ content: [{ type: 'text', text }] });
+        }
+        console.error(`[HasibPro] Gemini ${model} failed:`, gRes.status);
+      } catch (err) {
+        console.error(`[HasibPro] Gemini ${model} exception:`, err.message);
+      }
     }
   }
 
   return res.status(502).json({
-    error: 'خدمة الذكاء الاصطناعي غير متاحة حالياً — حاول مرة أخرى',
-    hint: 'تأكد أن GEMINI_API_KEY صحيح وأن Gemini API مفعّل في Google AI Studio'
+    error: 'خدمة الذكاء الاصطناعي غير متاحة حالياً — حاول مرة أخرى لاحقاً'
   });
 }
