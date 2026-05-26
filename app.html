@@ -425,10 +425,16 @@ body.light .feedback-form textarea::placeholder{color:#94a3b8!important;}
 
  <!-- Pro Gate -->
  <div id="aiGate" class="upgrade-banner" style="display:none">
- <h3><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-bottom:1px"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> ميزة Pro</h3>
- <p>المساعد الذكي متاح فقط لمشتركي الخطة المدفوعة<br>احصل على تحليل ذكي لأرقامك وتوصيات فورية</p>
+ <h3><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-bottom:1px"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> ميزة Pro حصرية</h3>
+ <p style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.8">المساعد الذكي متاح فقط لمشتركي الخطة <strong style="color:var(--teal)">Pro</strong><br>اشترك بـ <strong style="color:var(--teal)">49 درهم / شهر</strong> وتمتع بـ:</p>
+ <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:14px;font-size:10px;color:var(--text2)">
+   <span style="background:var(--bg3);border-radius:6px;padding:4px 9px;border:1px solid var(--border)">🤖 مساعد ذكي</span>
+   <span style="background:var(--bg3);border-radius:6px;padding:4px 9px;border:1px solid var(--border)">📊 تتبع شهري كامل</span>
+   <span style="background:var(--bg3);border-radius:6px;padding:4px 9px;border:1px solid var(--border)">📄 تصدير PDF</span>
+   <span style="background:var(--bg3);border-radius:6px;padding:4px 9px;border:1px solid var(--border)">⚡ أولوية في الدعم</span>
+ </div>
  <button class="btn-upgrade" onclick="goToPlans()">
- <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-bottom:1px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> ترقية للـ Pro
+ <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-bottom:1px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> اشترك الآن — 49 درهم/شهر
  </button>
  </div>
 
@@ -1446,20 +1452,37 @@ window.addEventListener('load', function() {
 </body>
 </html>`;
 
-    // Use Blob for direct download (no popup blocker issues)
+    // Open print dialog in hidden iframe for true PDF export
     const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
     const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
-    a.download = `HasibPro-${d.product || 'تقرير'}-${new Date().toISOString().slice(0,10)}.html`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+    // Create hidden iframe and trigger print (browser saves as PDF)
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0;border:none;';
+    document.body.appendChild(iframe);
+
+    iframe.onload = () => {
+      try {
+        // Set PDF filename hint via document title
+        const iDoc = iframe.contentDocument || iframe.contentWindow.document;
+        iDoc.title = `HasibPro — ${d.product || 'تقرير'} — ${new Date().toISOString().slice(0,10)}`;
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+      } catch(e) {
+        // Fallback: open in new tab for printing
+        const w = window.open(url, '_blank');
+        if(w) { w.onload = () => { w.focus(); w.print(); }; }
+      }
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+        URL.revokeObjectURL(url);
+      }, 5000);
+    };
+    iframe.src = url;
 
     // Success feedback
-    btns.forEach(b => { b.disabled = false; b.textContent = '✅ تم التحميل!'; });
-    setTimeout(() => btns.forEach(b => { b.textContent = 'تصدير PDF'; }), 2500);
+    btns.forEach(b => { b.disabled = false; b.textContent = '✅ جاهز للطباعة!'; });
+    setTimeout(() => btns.forEach(b => { b.textContent = 'تصدير PDF'; }), 3000);
 
   } catch(err) {
     console.error('PDF error:', err);
