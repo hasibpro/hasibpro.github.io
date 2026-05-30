@@ -1,4 +1,4 @@
-// api/chat.js — HasibPro + Groq (Free, Fast, Stable)
+// api/chat.js — HasibPro + Groq Only
 
 const store = new Map();
 
@@ -18,7 +18,7 @@ function rateLimit(ip) {
   return true;
 }
 
-function sanitize(str, max = 2000) {
+function sanitize(str, max = 3000) {
   if (typeof str !== 'string') return '';
 
   return str
@@ -29,6 +29,7 @@ function sanitize(str, max = 2000) {
 }
 
 export default async function handler(req, res) {
+
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -60,175 +61,135 @@ export default async function handler(req, res) {
   }
 
   const groqKey = process.env.GROQ_API_KEY;
-  const geminiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+
+  if (!groqKey) {
+    return res.status(500).json({
+      error: 'GROQ_API_KEY غير موجود في Environment Variables'
+    });
+  }
 
   const cleanSystem = sanitize(system || '', 5000) || `
-أنت HasibPro AI، مستشار خبير في التجارة الإلكترونية، الدروبشيبينغ، التسويق الرقمي وتحليل الأرباح.
+أنت HasibPro AI.
+
+مستشار خبير في:
+- التجارة الإلكترونية
+- الدروبشيبينغ
+- التسويق الرقمي
+- تحليل الأرباح
+- تحليل الإعلانات
+- التسعير
+- Shopify
+- Youcan
+- TikTok Shop
+- Amazon
+- WooCommerce
 
 قواعد الإجابة:
 
-- أجب دائماً باللغة التي يكتب بها المستخدم.
-- إذا كتب المستخدم بالعربية فأجب بالعربية الفصحى الواضحة والسليمة.
-- إذا كتب المستخدم بالدارجة المغربية فأجب بدارجة مغربية احترافية وواضحة.
-- تجنب الترجمة الحرفية والمصطلحات غير الطبيعية.
-- قدم إجابات عملية وقابلة للتطبيق.
+- أجب دائماً بنفس لغة المستخدم.
+- إذا كتب المستخدم بالعربية فأجب بالعربية الفصحى السليمة.
+- إذا كتب بالدارجة المغربية فأجب بدارجة مغربية احترافية وواضحة.
+- لا تستعمل ترجمة حرفية أو مصطلحات ركيكة.
 - استخدم عناوين ونقاط مرتبة.
-- قدم أمثلة رقمية عند الحديث عن الأرباح أو الإعلانات.
-- إذا كانت المعطيات ناقصة فاطلب المعلومات اللازمة.
+- اشرح خطوة بخطوة عند الحاجة.
+- قدم أمثلة رقمية واقعية.
+- ركز على السوق المغربي والعربي.
+- إذا كانت المعلومات ناقصة فاطلب التفاصيل اللازمة.
 - لا تخترع أرقاماً أو نتائج غير مؤكدة.
-- ركز على التجارة الإلكترونية والأسواق العربية والمغربية.
 
 أسلوب الكتابة:
-- واضح
+
 - احترافي
-- مباشر
+- واضح
+- عملي
 - منظم
-- سهل الفهم
+- مباشر
 `;
 
-  const lastMsg = sanitize(
-    messages[messages.length - 1]?.content || ''
-  );
+  // الاحتفاظ بآخر 10 رسائل للسياق
+  const conversationMessages = messages
+    .slice(-10)
+    .map(m => ({
+      role: m.role === 'assistant' ? 'assistant' : 'user',
+      content: sanitize(
+        typeof m.content === 'string'
+          ? m.content
+          : JSON.stringify(m.content || ''),
+        3000
+      )
+    }));
 
-  // ===== TRY GROQ FIRST =====
+  try {
 
-  if (groqKey) {
-    try {
-      const groqRes = await fetch(
-        'https://api.groq.com/openai/v1/chat/completions',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${groqKey}`
-          },
-          body: JSON.stringify({
-            model: 'llama-3.3-70b-versatile',
-            messages: [
-              {
-                role: 'system',
-                content: cleanSystem
-              },
-              {
-                role: 'user',
-                content: lastMsg
-              }
-            ],
-            max_tokens: 2000,
-            temperature: 0.5
-          })
-        }
-      );
+    const groqRes = await fetch(
+      'https://api.groq.com/openai/v1/chat/completions',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${groqKey}`
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
 
-      if (groqRes.ok) {
-        const data = await groqRes.json();
-
-        const text =
-          data.choices?.[0]?.message?.content ||
-          'لم أتمكن من إنشاء إجابة حالياً.';
-
-        console.log(
-          '[HasibPro] Success: Groq llama-3.3-70b-versatile'
-        );
-
-        return res.status(200).json({
-          content: [
+          messages: [
             {
-              type: 'text',
-              text
-            }
-          ]
-        });
+              role: 'system',
+              content: cleanSystem
+            },
+            ...conversationMessages
+          ],
+
+          temperature: 0.5,
+          max_tokens: 2000,
+          top_p: 0.95
+        })
       }
+    );
+
+    if (!groqRes.ok) {
+
+      const errorText = await groqRes.text();
 
       console.error(
         '[HasibPro] Groq failed:',
-        groqRes.status
+        groqRes.status,
+        errorText
       );
-    } catch (err) {
-      console.error(
-        '[HasibPro] Groq exception:',
-        err.message
-      );
+
+      return res.status(502).json({
+        error: 'تعذر الوصول إلى خدمة الذكاء الاصطناعي'
+      });
     }
-  }
 
-  // ===== GEMINI FALLBACK =====
+    const data = await groqRes.json();
 
-  if (geminiKey) {
-    const models = [
-      'gemini-2.0-flash',
-      'gemini-2.0-flash-lite',
-      'gemini-1.5-flash'
-    ];
+    const text =
+      data?.choices?.[0]?.message?.content ||
+      'تعذر إنشاء إجابة حالياً.';
 
-    const contents = [
-      {
-        role: 'user',
-        parts: [
-          {
-            text: cleanSystem + '\n\n' + lastMsg
-          }
-        ]
-      }
-    ];
+    console.log(
+      '[HasibPro] Success: Groq llama-3.3-70b-versatile'
+    );
 
-    for (const model of models) {
-      try {
-        const url =
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
-
-        const gRes = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-goog-api-key': geminiKey
-          },
-          body: JSON.stringify({
-            contents,
-            generationConfig: {
-              maxOutputTokens: 2000,
-              temperature: 0.5
-            }
-          })
-        });
-
-        if (gRes.ok) {
-          const data = await gRes.json();
-
-          const text =
-            data.candidates?.[0]?.content?.parts?.[0]?.text ||
-            '';
-
-          console.log(
-            `[HasibPro] Success: Gemini ${model}`
-          );
-
-          return res.status(200).json({
-            content: [
-              {
-                type: 'text',
-                text
-              }
-            ]
-          });
+    return res.status(200).json({
+      content: [
+        {
+          type: 'text',
+          text
         }
+      ]
+    });
 
-        console.error(
-          `[HasibPro] Gemini ${model} failed:`,
-          gRes.status
-        );
-      } catch (err) {
-        console.error(
-          `[HasibPro] Gemini ${model} exception:`,
-          err.message
-        );
-      }
-    }
+  } catch (err) {
+
+    console.error(
+      '[HasibPro] Groq exception:',
+      err.message
+    );
+
+    return res.status(502).json({
+      error: 'خدمة الذكاء الاصطناعي غير متاحة حالياً'
+    });
   }
-
-  return res.status(502).json({
-    error:
-      'خدمة الذكاء الاصطناعي غير متاحة حالياً — حاول مرة أخرى لاحقاً'
-  });
 }
