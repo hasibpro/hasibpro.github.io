@@ -1359,11 +1359,7 @@ function exportPDF(section) {
 <!-- HEADER -->
 <div class="header">
  <div class="logo">
- <svg width="42" height="42" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
- <defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#00d4aa"/><stop offset="100%" style="stop-color:#4e8ef7"/></linearGradient></defs>
- <rect width="50" height="50" rx="12" fill="url(#g)"/>
- <text x="25" y="34" text-anchor="middle" font-size="22" font-weight="900" fill="black" font-family="Arial">HP</text>
- </svg>
+ <img src="/logo.png" alt="HasibPro" style="width:42px;height:42px;object-fit:contain;border-radius:9px;">
  <div>
  <div class="logo-text">HasibPro</div>
  <div class="logo-sub">E-Commerce Profit Calculator</div>
@@ -1435,23 +1431,78 @@ function exportPDF(section) {
  <span>hasibpro-github-io-wy99.vercel.app</span>
 </div>
 
-<script>window.addEventListener("load",function(){setTimeout(function(){window.print();},600);window.onafterprint=function(){window.close();};})<\/script>
 </body>
 </html>`;
 
- // Open print dialog → user can Save as PDF
-  const win = window.open('', '_blank');
-  if (win) {
-    win.document.write(html);
-    win.document.close();
-  } else {
+  // ── تحميل مباشر بدون نافذة طباعة ──
+  // نستخدم jsPDF + html2canvas لتوليد PDF مباشرة
+  const loadScript = (src) => new Promise((res, rej) => {
+    if (document.querySelector(`script[src="${src}"]`)) { res(); return; }
+    const s = document.createElement('script');
+    s.src = src; s.onload = res; s.onerror = rej;
+    document.head.appendChild(s);
+  });
+
+  showToast('⏳ جاري إنشاء PDF...');
+
+  try {
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+
+    // نحضر الـ HTML في iframe مخفي
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;left:-9999px;top:0;width:900px;height:1200px;border:none;';
+    document.body.appendChild(iframe);
+
+    iframe.contentDocument.open();
+    iframe.contentDocument.write(html);
+    iframe.contentDocument.close();
+
+    // ننتظر تحميل الخطوط والصور
+    await new Promise(r => setTimeout(r, 1500));
+
+    const canvas = await html2canvas(iframe.contentDocument.body, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      width: 900,
+      windowWidth: 900,
+    });
+
+    document.body.removeChild(iframe);
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const imgW = pageW;
+    const imgH = (canvas.height * imgW) / canvas.width;
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+
+    let y = 0;
+    while (y < imgH) {
+      if (y > 0) pdf.addPage();
+      pdf.addImage(imgData, 'JPEG', 0, -y, imgW, imgH);
+      y += pageH;
+    }
+
+    const fileName = `HasibPro-${(d.product || 'تقرير').replace(/[^\w\u0600-\u06FF]/g,'_')}-${new Date().toISOString().slice(0,10)}.pdf`;
+    pdf.save(fileName);
+    showToast('✅ تم تحميل PDF بنجاح!');
+
+  } catch(err) {
+    console.error('PDF error:', err);
+    // Fallback: تحميل HTML مباشرة
     const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
-    a.href = url; a.download = 'HasibPro-Report.html';
+    a.href = url; a.download = `HasibPro-${(d.product||'تقرير').replace(/[^\w\u0600-\u06FF]/g,'_')}.html`;
     document.body.appendChild(a); a.click();
     document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showToast('✅ تم التحميل!');
   }
 }
 
@@ -1572,4 +1623,4 @@ window.addEventListener('DOMContentLoaded', async () => {
 });
 </script>
 </body>
-</html>
+ </html>
