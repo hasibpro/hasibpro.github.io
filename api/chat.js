@@ -1,195 +1,108 @@
-// api/chat.js — HasibPro + Groq Only
+// api/chat.js — HasibPro + Groq (Free, Fast, Stable)
 
 const store = new Map();
 
 function rateLimit(ip) {
   const now = Date.now();
   const rec = store.get(ip) || { n: 0, t: now };
-
-  if (now - rec.t > 60000) {
-    store.set(ip, { n: 1, t: now });
-    return true;
-  }
-
+  if (now - rec.t > 60000) { store.set(ip, { n: 1, t: now }); return true; }
   if (rec.n >= 15) return false;
-
-  rec.n++;
-  store.set(ip, rec);
-  return true;
+  rec.n++; store.set(ip, rec); return true;
 }
 
-function sanitize(str, max = 3000) {
+function sanitize(str, max = 2000) {
   if (typeof str !== 'string') return '';
-
-  return str
-    .replace(/<script[\s\S]*?<\/script>/gi, '')
-    .replace(/javascript:/gi, '')
-    .trim()
-    .slice(0, max);
+  return str.replace(/<script[\s\S]*?<\/script>/gi, '')
+            .replace(/javascript:/gi, '')
+            .trim().slice(0, max);
 }
 
 export default async function handler(req, res) {
-
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).end();
 
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  if (req.method !== 'POST') {
-    return res.status(405).end();
-  }
-
-  const ip = (req.headers['x-forwarded-for'] || 'unknown')
-    .split(',')[0]
-    .trim();
-
-  if (!rateLimit(ip)) {
-    return res.status(429).json({
-      error: 'كثرت الطلبات — انتظر دقيقة'
-    });
-  }
+  const ip = (req.headers['x-forwarded-for'] || 'unknown').split(',')[0].trim();
+  if (!rateLimit(ip)) return res.status(429).json({ error: 'كثرت الطلبات — انتظر دقيقة' });
 
   const { messages, system } = req.body || {};
+  if (!Array.isArray(messages) || messages.length === 0)
+    return res.status(400).json({ error: 'بيانات غير صالحة' });
 
-  if (!Array.isArray(messages) || messages.length === 0) {
-    return res.status(400).json({
-      error: 'بيانات غير صالحة'
-    });
-  }
+  // Try Groq first (free), then Gemini as fallback
+  const groqKey   = process.env.GROQ_API_KEY;
+  const geminiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
 
-  const groqKey = process.env.GROQ_API_KEY;
+  const cleanSystem = sanitize(system || '', 3000) ||
+    'أنت مستشار خبير في التجارة الإلكترونية للسوق المغربي والعربي. أجب بشكل مختصر وعملي.';
 
-  if (!groqKey) {
-    return res.status(500).json({
-      error: 'GROQ_API_KEY غير موجود في Environment Variables'
-    });
-  }
+  const lastMsg = sanitize(messages[messages.length - 1]?.content || '');
 
-  const cleanSystem = sanitize(system || '', 5000) || `
-أنت HasibPro AI.
-
-مستشار خبير في:
-- التجارة الإلكترونية
-- الدروبشيبينغ
-- التسويق الرقمي
-- تحليل الأرباح
-- تحليل الإعلانات
-- التسعير
-- Shopify
-- Youcan
-- TikTok Shop
-- Amazon
-- WooCommerce
-
-قواعد الإجابة:
-
-- أجب دائماً بنفس لغة المستخدم.
-- إذا كتب المستخدم بالعربية فأجب بالعربية الفصحى السليمة.
-- إذا كتب بالدارجة المغربية فأجب بدارجة مغربية احترافية وواضحة.
-- لا تستعمل ترجمة حرفية أو مصطلحات ركيكة.
-- استخدم عناوين ونقاط مرتبة.
-- اشرح خطوة بخطوة عند الحاجة.
-- قدم أمثلة رقمية واقعية.
-- ركز على السوق المغربي والعربي.
-- إذا كانت المعلومات ناقصة فاطلب التفاصيل اللازمة.
-- لا تخترع أرقاماً أو نتائج غير مؤكدة.
-
-أسلوب الكتابة:
-
-- احترافي
-- واضح
-- عملي
-- منظم
-- مباشر
-`;
-
-  // الاحتفاظ بآخر 10 رسائل للسياق
-  const conversationMessages = messages
-    .slice(-10)
-    .map(m => ({
-      role: m.role === 'assistant' ? 'assistant' : 'user',
-      content: sanitize(
-        typeof m.content === 'string'
-          ? m.content
-          : JSON.stringify(m.content || ''),
-        3000
-      )
-    }));
-
-  try {
-
-    const groqRes = await fetch(
-      'https://api.groq.com/openai/v1/chat/completions',
-      {
+  // ===== TRY GROQ (FREE) =====
+  if (groqKey) {
+    try {
+      const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${groqKey}`
         },
         body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-
+          model: 'llama-3.1-8b-instant',
           messages: [
-            {
-              role: 'system',
-              content: cleanSystem
-            },
-            ...conversationMessages
+            { role: 'system', content: cleanSystem },
+            { role: 'user',   content: lastMsg }
           ],
-
-          temperature: 0.5,
-          max_tokens: 2000,
-          top_p: 0.95
+          max_tokens: 1000,
+          temperature: 0.7
         })
-      }
-    );
-
-    if (!groqRes.ok) {
-
-      const errorText = await groqRes.text();
-
-      console.error(
-        '[HasibPro] Groq failed:',
-        groqRes.status,
-        errorText
-      );
-
-      return res.status(502).json({
-        error: 'تعذر الوصول إلى خدمة الذكاء الاصطناعي'
       });
+
+      if (groqRes.ok) {
+        const data = await groqRes.json();
+        const text = data.choices?.[0]?.message?.content || '';
+        console.log('[HasibPro] Success: Groq llama-3.1-8b-instant');
+        return res.status(200).json({ content: [{ type: 'text', text }] });
+      }
+      console.error('[HasibPro] Groq failed:', groqRes.status);
+    } catch (err) {
+      console.error('[HasibPro] Groq exception:', err.message);
     }
-
-    const data = await groqRes.json();
-
-    const text =
-      data?.choices?.[0]?.message?.content ||
-      'تعذر إنشاء إجابة حالياً.';
-
-    console.log(
-      '[HasibPro] Success: Groq llama-3.3-70b-versatile'
-    );
-
-    return res.status(200).json({
-      content: [
-        {
-          type: 'text',
-          text
-        }
-      ]
-    });
-
-  } catch (err) {
-
-    console.error(
-      '[HasibPro] Groq exception:',
-      err.message
-    );
-
-    return res.status(502).json({
-      error: 'خدمة الذكاء الاصطناعي غير متاحة حالياً'
-    });
   }
+
+  // ===== FALLBACK: GEMINI =====
+  if (geminiKey) {
+    const models = ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-flash'];
+    const contents = [{ role: 'user', parts: [{ text: cleanSystem + '\n\n' + lastMsg }] }];
+
+    for (const model of models) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+        const gRes = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': geminiKey },
+          body: JSON.stringify({
+            contents,
+            generationConfig: { maxOutputTokens: 1000, temperature: 0.7 }
+          })
+        });
+
+        if (gRes.ok) {
+          const data = await gRes.json();
+          const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          console.log(`[HasibPro] Success: Gemini ${model}`);
+          return res.status(200).json({ content: [{ type: 'text', text }] });
+        }
+        console.error(`[HasibPro] Gemini ${model} failed:`, gRes.status);
+      } catch (err) {
+        console.error(`[HasibPro] Gemini ${model} exception:`, err.message);
+      }
+    }
+  }
+
+  return res.status(502).json({
+    error: 'خدمة الذكاء الاصطناعي غير متاحة حالياً — حاول مرة أخرى لاحقاً'
+  });
 }
