@@ -481,7 +481,7 @@ body.light .feedback-form textarea::placeholder{color:#94a3b8!important;}
  <div class="price-period" id="proPricePeriod">درهم / شهر</div>
  <ul class="price-features">
  <li>كل مميزات المجاني</li>
- <li>مساعد ذكي</li>
+ <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4e8ef7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-bottom:1px"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg> مساعد ذكي</li>
  <li>تتبع شهري كامل</li>
  <li>تصدير PDF متقدم</li>
  <li>أولوية في الدعم</li>
@@ -1269,242 +1269,164 @@ function initApp(){
 
 
 // ===== PROFESSIONAL PDF EXPORT =====
-function exportPDF(section) {
- const userName = document.getElementById('userName')?.textContent || 'مستخدم';
- const planName = document.getElementById('planBadge')?.textContent || 'Free';
- const curSym = (window.CURRENCIES || {})[window.curCode]?.sym || 'درهم';
- const date = new Date().toLocaleDateString('ar-MA', {year:'numeric',month:'long',day:'numeric'});
+function exportPDF() {
+  const btns = document.querySelectorAll('[onclick="exportPDF()"]');
+  btns.forEach(b => { b.disabled = true; b.textContent = '⏳ جاري التحميل...'; });
 
- // Gather data
- const d = {
- product: document.getElementById('productName')?.value || '—',
- platform: document.getElementById('platform')?.options[document.getElementById('platform')?.selectedIndex]?.text || '—',
- salePrice: document.getElementById('salePrice')?.value || '0',
- productCost: document.getElementById('productCost')?.value || '0',
- shipping: document.getElementById('shipping')?.value || '0',
- packaging: document.getElementById('packaging')?.value || '0',
- adCost: document.getElementById('adCost')?.value || '0',
- otherCost: document.getElementById('otherCost')?.value || '0',
- netProfit: document.getElementById('r-profit')?.textContent || '0',
- margin: document.getElementById('r-margin')?.textContent || '0%',
- totalCost: document.getElementById('r-total')?.textContent || '0',
- breakeven: document.getElementById('r-break')?.textContent || '0',
- roa: document.getElementById('r-roa')?.textContent || '—',
- };
+  try {
+    const userName = document.getElementById('userName')?.textContent || 'مستخدم';
+    const planName = document.getElementById('planBadge')?.textContent || 'Free';
+    const curSym   = (window.CURRENCIES || {})[window.curCode]?.sym || 'درهم';
+    const curCode  = window.curCode || 'MAD';
+    const date     = new Date().toLocaleDateString('ar-MA', {year:'numeric',month:'long',day:'numeric'});
 
- // Monthly data
- const months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
- const monthlyRows = (window.monthlyData || []).map((m,i) => {
- const profit = (m.r||0) - (m.c||0);
- const color = profit >= 0 ? '#00d4aa' : '#ef4444';
- return `<tr>
- <td>${months[i]}</td>
- <td style="text-align:center">${m.u||0}</td>
- <td style="text-align:center">${(m.r||0).toLocaleString()}</td>
- <td style="text-align:center">${(m.c||0).toLocaleString()}</td>
- <td style="text-align:center;color:${color};font-weight:800">${profit.toLocaleString()}</td>
- </tr>`;
- }).join('');
+    const d = {
+      product:     document.getElementById('productName')?.value || '—',
+      platform:    document.getElementById('platform')?.options[document.getElementById('platform')?.selectedIndex]?.text || '—',
+      salePrice:   document.getElementById('salePrice')?.value || '0',
+      productCost: document.getElementById('productCost')?.value || '0',
+      shipping:    document.getElementById('shipping')?.value || '0',
+      packaging:   document.getElementById('packaging')?.value || '0',
+      adCost:      document.getElementById('adCost')?.value || '0',
+      otherCost:   document.getElementById('otherCost')?.value || '0',
+      netProfit:   document.getElementById('r-profit')?.textContent || '0',
+      margin:      document.getElementById('r-margin')?.textContent || '0%',
+      totalCost:   document.getElementById('r-total')?.textContent || '0',
+      breakeven:   document.getElementById('r-break')?.textContent || '0',
+    };
 
- const totalRev = (window.monthlyData||[]).reduce((s,m)=>s+(m.r||0),0);
- const totalCost = (window.monthlyData||[]).reduce((s,m)=>s+(m.c||0),0);
- const totalProf = totalRev - totalCost;
+    const months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+    const monthlyRows = (window.monthlyData || []).map((m,i) => {
+      const profit = (m.r||0) - (m.c||0);
+      const color  = profit >= 0 ? '#16a34a' : '#ef4444';
+      return `<tr>
+        <td>${months[i]}</td>
+        <td style="text-align:center">${m.u||0}</td>
+        <td style="text-align:center">${(m.r||0).toLocaleString()}</td>
+        <td style="text-align:center">${(m.c||0).toLocaleString()}</td>
+        <td style="text-align:center;color:${color};font-weight:700">${profit.toLocaleString()}</td>
+      </tr>`;
+    }).join('');
 
- const html = `<!DOCTYPE html>
+    const totalRev  = (window.monthlyData||[]).reduce((s,m)=>s+(m.r||0),0);
+    const totalCost = (window.monthlyData||[]).reduce((s,m)=>s+(m.c||0),0);
+    const totalProf = totalRev - totalCost;
+
+    const html = `<!DOCTYPE html>
 <html dir="rtl" lang="ar">
 <head>
 <meta charset="UTF-8">
-<title>تقرير HasibPro — ${d.product}</title>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<title>تقرير HasibPro</title>
 <style>
- *{margin:0;padding:0;box-sizing:border-box;}
- body{font-family:'Cairo',sans-serif;background:#fff;color:#1e293b;padding:32px;font-size:13px;direction:rtl;}
- .header{display:flex;align-items:center;justify-content:space-between;padding-bottom:20px;border-bottom:3px solid #00d4aa;margin-bottom:24px;}
- .logo{display:flex;align-items:center;gap:12px;}
- .logo-text{font-size:22px;font-weight:900;background:linear-gradient(135deg,#00d4aa,#4e8ef7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
- .logo-sub{font-size:10px;color:#94a3b8;margin-top:2px;}
- .meta{text-align:left;font-size:11px;color:#64748b;line-height:1.8;}
- .meta strong{color:#1e293b;}
- h2{font-size:15px;font-weight:800;color:#0f172a;margin:22px 0 12px;padding-right:10px;border-right:4px solid #00d4aa;}
- .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
- .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
- .kpi{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;text-align:center;}
- .kpi-label{font-size:10px;color:#94a3b8;font-weight:600;margin-bottom:6px;}
- .kpi-value{font-size:20px;font-weight:900;color:#00d4aa;}
- .kpi-value.red{color:#ef4444;}
- .row{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;border-bottom:1px solid #f1f5f9;font-size:12px;}
- .row:last-child{border-bottom:none;}
- .row-label{color:#64748b;}
- .row-value{font-weight:700;color:#1e293b;}
- .box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;margin-bottom:16px;}
- table{width:100%;border-collapse:collapse;font-size:11px;}
- th{background:#0f172a;color:#e2e8f0;padding:9px 10px;text-align:right;font-weight:700;}
- td{padding:8px 10px;border-bottom:1px solid #f1f5f9;color:#334155;}
- tr:last-child td{border-bottom:none;}
- .total-row td{background:#f0fdf4;font-weight:800;color:#00d4aa;}
- .badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:10px;font-weight:700;}
- .badge-pro{background:#dcfce7;color:#16a34a;}
- .badge-free{background:#f1f5f9;color:#64748b;}
- .footer{margin-top:36px;padding-top:16px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;font-size:10px;color:#94a3b8;}
- .highlight{color:#00d4aa;font-weight:900;}
- .positive{color:#16a34a;font-weight:800;}
- .negative{color:#ef4444;font-weight:800;}
- @media print{
- body{padding:20px;}
- @page{margin:15mm;size:A4;}
- }
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Cairo',Arial,sans-serif;background:#fff;color:#1e293b;padding:24px 28px;font-size:12px;direction:rtl;}
+.header{display:flex;align-items:center;justify-content:space-between;padding-bottom:16px;border-bottom:3px solid #00d4aa;margin-bottom:20px;}
+.logo-area{display:flex;align-items:center;gap:10px;}
+.logo-area img{width:50px;height:50px;object-fit:contain;}
+.logo-name{font-size:22px;font-weight:900;color:#0f172a;}
+.logo-name span{color:#00d4aa;}
+.logo-sub{font-size:9px;color:#94a3b8;}
+.meta{text-align:left;font-size:11px;color:#64748b;line-height:2;}
+.meta strong{color:#1e293b;}
+.badge{background:#dcfce7;color:#16a34a;border-radius:20px;padding:1px 8px;font-size:10px;font-weight:700;}
+h2{font-size:13px;font-weight:800;color:#0f172a;margin:18px 0 10px;padding-right:10px;border-right:3px solid #00d4aa;}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;}
+.kpi{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;text-align:center;}
+.kpi-label{font-size:9px;color:#94a3b8;font-weight:600;margin-bottom:4px;}
+.kpi-value{font-size:18px;font-weight:900;color:#00d4aa;}
+.kpi-value.neg{color:#ef4444;}
+.box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-bottom:14px;}
+.row{display:flex;justify-content:space-between;align-items:center;padding:7px 12px;border-bottom:1px solid #f1f5f9;font-size:11px;}
+.row:last-child{border:none;}
+.lbl{color:#64748b;}
+.val{font-weight:700;color:#1e293b;}
+.hl{color:#00d4aa;font-weight:800;}
+table{width:100%;border-collapse:collapse;font-size:10px;}
+th{background:#0f172a;color:#e2e8f0;padding:7px 8px;text-align:right;font-weight:700;}
+td{padding:6px 8px;border-bottom:1px solid #f1f5f9;color:#334155;}
+.tot td{background:#f0fdf4;font-weight:800;border:none;}
+.footer{margin-top:24px;padding-top:12px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;font-size:9px;color:#94a3b8;}
 </style>
 </head>
 <body>
-<!-- HEADER -->
 <div class="header">
- <div class="logo">
- <img src="/logo.png" alt="HasibPro" style="width:42px;height:42px;object-fit:contain;border-radius:9px;">
- <div>
- <div class="logo-text">HasibPro</div>
- <div class="logo-sub">E-Commerce Profit Calculator</div>
- </div>
- </div>
- <div class="meta">
- <div><strong>التاريخ:</strong> ${date}</div>
- <div><strong>المستخدم:</strong> ${userName}</div>
- <div><strong>الخطة:</strong> <span class="${planName.includes('Pro')?'badge badge-pro':'badge badge-free'}">${planName}</span></div>
- <div><strong>العملة:</strong> ${curSym} (${window.curCode||'MAD'})</div>
- </div>
+  <div class="logo-area">
+    <img src="data:image/png;base64,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" alt="HasibPro">
+    <div>
+      <div class="logo-name">Hasib<span>Pro</span></div>
+      <div class="logo-sub">E-Commerce Profit Calculator</div>
+    </div>
+  </div>
+  <div class="meta">
+    <div><strong>التاريخ:</strong> ${date}</div>
+    <div><strong>المستخدم:</strong> ${userName}</div>
+    <div><strong>الخطة:</strong> <span class="badge">${planName}</span></div>
+    <div><strong>العملة:</strong> ${curSym} (${curCode})</div>
+  </div>
 </div>
 
-<!-- PRODUCT KPIs -->
-<h2>ملخص المنتج الأساسي</h2>
-<div class="grid4">
- <div class="kpi">
- <div class="kpi-label">سعر البيع</div>
- <div class="kpi-value">${d.salePrice}</div>
- </div>
- <div class="kpi">
- <div class="kpi-label">إجمالي التكاليف</div>
- <div class="kpi-value">${d.totalCost}</div>
- </div>
- <div class="kpi">
- <div class="kpi-label">صافي الربح</div>
- <div class="kpi-value ${parseFloat(d.netProfit)<0?'red':''}">${d.netProfit}</div>
- </div>
- <div class="kpi">
- <div class="kpi-label">هامش الربح</div>
- <div class="kpi-value ${parseFloat(d.margin)<0?'red':''}">${d.margin}</div>
- </div>
+<h2>ملخص المنتج</h2>
+<div class="kpi-grid">
+  <div class="kpi"><div class="kpi-label">سعر البيع</div><div class="kpi-value">${d.salePrice}</div></div>
+  <div class="kpi"><div class="kpi-label">إجمالي التكاليف</div><div class="kpi-value">${d.totalCost}</div></div>
+  <div class="kpi"><div class="kpi-label">صافي الربح</div><div class="kpi-value ${parseFloat(d.netProfit)<0?'neg':''}">${d.netProfit}</div></div>
+  <div class="kpi"><div class="kpi-label">هامش الربح</div><div class="kpi-value ${parseFloat(d.margin)<0?'neg':''}">${d.margin}</div></div>
 </div>
 
-<!-- COST BREAKDOWN -->
 <h2>تفصيل التكاليف</h2>
 <div class="box">
- <div class="row"><span class="row-label">المنتج / اسمه</span><span class="row-value">${d.product}</span></div>
- <div class="row"><span class="row-label">المنصة</span><span class="row-value">${d.platform}</span></div>
- <div class="row"><span class="row-label">تكلفة المنتج</span><span class="row-value">${d.productCost} ${curSym}</span></div>
- <div class="row"><span class="row-label">تكلفة الشحن</span><span class="row-value">${d.shipping} ${curSym}</span></div>
- <div class="row"><span class="row-label">التغليف</span><span class="row-value">${d.packaging} ${curSym}</span></div>
- <div class="row"><span class="row-label">تكلفة الإعلانات</span><span class="row-value">${d.adCost} ${curSym}</span></div>
- <div class="row"><span class="row-label">تكاليف أخرى</span><span class="row-value">${d.otherCost} ${curSym}</span></div>
- <div class="row" style="background:#f0fdf4"><span class="row-label" style="font-weight:800">نقطة التعادل</span><span class="row-value highlight">${d.breakeven} وحدة</span></div>
+  <div class="row"><span class="lbl">المنتج / اسمه</span><span class="val">${d.product}</span></div>
+  <div class="row"><span class="lbl">المنصة</span><span class="val">${d.platform}</span></div>
+  <div class="row"><span class="lbl">تكلفة المنتج</span><span class="val">${d.productCost} ${curSym}</span></div>
+  <div class="row"><span class="lbl">الشحن</span><span class="val">${d.shipping} ${curSym}</span></div>
+  <div class="row"><span class="lbl">التغليف</span><span class="val">${d.packaging} ${curSym}</span></div>
+  <div class="row"><span class="lbl">الإعلانات</span><span class="val">${d.adCost} ${curSym}</span></div>
+  <div class="row"><span class="lbl">أخرى</span><span class="val">${d.otherCost} ${curSym}</span></div>
+  <div class="row" style="background:#f0fdf4"><span class="lbl" style="font-weight:700">نقطة التعادل</span><span class="val hl">${d.breakeven} وحدة</span></div>
 </div>
 
-<!-- MONTHLY TABLE -->
 <h2>التتبع الشهري</h2>
 <div class="box">
- <table>
- <thead><tr><th>الشهر</th><th style="text-align:center">الوحدات</th><th style="text-align:center">الإيرادات</th><th style="text-align:center">التكاليف</th><th style="text-align:center">صافي الربح</th></tr></thead>
- <tbody>${monthlyRows}</tbody>
- <tfoot>
- <tr class="total-row">
- <td style="font-weight:900">الإجمالي السنوي</td>
- <td style="text-align:center">—</td>
- <td style="text-align:center">${totalRev.toLocaleString()} ${curSym}</td>
- <td style="text-align:center">${totalCost.toLocaleString()} ${curSym}</td>
- <td style="text-align:center;color:${totalProf>=0?'#16a34a':'#ef4444'}">${totalProf.toLocaleString()} ${curSym}</td>
- </tr>
- </tfoot>
- </table>
+  <table>
+    <thead><tr><th>الشهر</th><th>الوحدات</th><th>الإيرادات</th><th>التكاليف</th><th>صافي الربح</th></tr></thead>
+    <tbody>${monthlyRows}</tbody>
+    <tfoot><tr class="tot">
+      <td>الإجمالي</td><td style="text-align:center">—</td>
+      <td style="text-align:center">${totalRev.toLocaleString()} ${curSym}</td>
+      <td style="text-align:center">${totalCost.toLocaleString()} ${curSym}</td>
+      <td style="text-align:center;color:${totalProf>=0?'#16a34a':'#ef4444'}">${totalProf.toLocaleString()} ${curSym}</td>
+    </tr></tfoot>
+  </table>
 </div>
 
-<!-- FOOTER -->
 <div class="footer">
- <span>HasibPro — أداة مالية ذكية للتجارة الإلكترونية</span>
- <span>hasibpro-github-io-wy99.vercel.app</span>
+  <span>HasibPro — أداة مالية ذكية للتجارة الإلكترونية</span>
+  <span>hasibpro-app.vercel.app</span>
 </div>
-
 </body>
 </html>`;
 
-  // ── تحميل مباشر بدون نافذة طباعة ──
-  // نستخدم jsPDF + html2canvas لتوليد PDF مباشرة
-  const loadScript = (src) => new Promise((res, rej) => {
-    if (document.querySelector(`script[src="${src}"]`)) { res(); return; }
-    const s = document.createElement('script');
-    s.src = src; s.onload = res; s.onerror = rej;
-    document.head.appendChild(s);
-  });
+    // Direct download as .html — user opens and prints to PDF
+    const blob = new Blob([html], {type:'text/html;charset=utf-8'});
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = 'HasibPro-' + (d.product||'تقرير') + '-' + new Date().toISOString().slice(0,10) + '.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
 
-  showToast('⏳ جاري إنشاء PDF...');
-
-  try {
-    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
-    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
-
-    // نحضر الـ HTML في iframe مخفي
-    const iframe = document.createElement('iframe');
-    iframe.style.cssText = 'position:fixed;left:-9999px;top:0;width:900px;height:1200px;border:none;';
-    document.body.appendChild(iframe);
-
-    iframe.contentDocument.open();
-    iframe.contentDocument.write(html);
-    iframe.contentDocument.close();
-
-    // ننتظر تحميل الخطوط والصور
-    await new Promise(r => setTimeout(r, 1500));
-
-    const canvas = await html2canvas(iframe.contentDocument.body, {
-      scale: 2,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: '#ffffff',
-      width: 900,
-      windowWidth: 900,
-    });
-
-    document.body.removeChild(iframe);
-
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-
-    const pageW = pdf.internal.pageSize.getWidth();
-    const pageH = pdf.internal.pageSize.getHeight();
-    const imgW = pageW;
-    const imgH = (canvas.height * imgW) / canvas.width;
-    const imgData = canvas.toDataURL('image/jpeg', 0.95);
-
-    let y = 0;
-    while (y < imgH) {
-      if (y > 0) pdf.addPage();
-      pdf.addImage(imgData, 'JPEG', 0, -y, imgW, imgH);
-      y += pageH;
-    }
-
-    const fileName = `HasibPro-${(d.product || 'تقرير').replace(/[^\w\u0600-\u06FF]/g,'_')}-${new Date().toISOString().slice(0,10)}.pdf`;
-    pdf.save(fileName);
-    showToast('✅ تم تحميل PDF بنجاح!');
+    btns.forEach(b => { b.disabled=false; b.textContent='✅ تم التحميل'; });
+    setTimeout(() => btns.forEach(b => { b.textContent='تصدير PDF'; }), 2500);
 
   } catch(err) {
     console.error('PDF error:', err);
-    // Fallback: تحميل HTML مباشرة
-    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href = url; a.download = `HasibPro-${(d.product||'تقرير').replace(/[^\w\u0600-\u06FF]/g,'_')}.html`;
-    document.body.appendChild(a); a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    showToast('✅ تم التحميل!');
+    btns.forEach(b => { b.disabled=false; b.textContent='تصدير PDF'; });
   }
 }
+
 
 // ===== MAIN =====
 window.addEventListener('DOMContentLoaded', async () => {
