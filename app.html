@@ -170,6 +170,7 @@ body.light .feedback-form textarea::placeholder{color:#94a3b8!important;}
 .save-indicator.saved{color:var(--green);}
 </style>
 <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAADk0lEQVR42u1WW2gcVRj+zpmZvWWzbUIySaNRhFBDmoqhoIQ+bOLlwapBWyb0goK2VKkPEaVYqXK6wkqCgtonW7AorUF2UFARhIK7KyUUTVmpJg29Itm0TbNmN7vZmd2ZOXN8WF/EZrtNgvSh38t5Ofzf+b/vvxzgLu5YaDHp/yMTgtR6tbaLAiScYP/KoC8BNzK5gUAf5ADQufeb3qmjW08DECsnrIL7Wdwn5+xPYMq7mrOZ5tP6oAkIApCbEsu3ygwAnvme+e1m8qZDvF3c8E4Lw5+yc9I5K6+aTuaqm/ete1xGXcBwSp0AUmAgiNw8U1qNL5xgEggEV3PD0hrrPSEWw65S2ucEMMrrfSmhhqZ4SHqYSLZB/YW3YWXOa7GYhAhZUlZaXbAEAECRzValfN3+qTfaFoD5guy3bOoji8ScZbxEg1KQbPSahSNnT7xY1CcmRDUfSS2Sbv99t8odstulsmoojUOlQvOnTeO5/VDapAly359u1vli6q1nh8IsLicj/U61kPQWNSw0XaNfPfTZrKLwkFyPIU+pMND08thQuuOB1y41tt6QiXW+xRg/CABJJNwVtYUmNEknOn/+lz2vB9q9H5UuL2xeMJ5M2yHzN2sxWOfM0g+Na4EuzuvaW4rZvuQhrViJuBwPBYhOdD5waqTeVEIj89N0+OvNJ8asYOaUAJlsvJ5v/XXnzoOEIOq4gZ4Ze+0eECLCLCEtS1JNj1EAKAryaFle53Fpy+Fw/HAnV+rb3WulvT/s2pfddOS7wB9vPDdu560z3PH1VGStjqUz1CqHaQUDZlkVsimVyvDea2Yol7Khq2Bx+cwrA0Z3dLSF0IZNsOWfaxkUSza+fmii4kNh7bgl/GRmXhmWhXPWVZSF5Es7cgDQHf2xs+Dc8y0s+2JrOj16RQgCAl6NcGm9k0mBWEya3rY9rz6xzRRW0wF7zt3i2JK1pkN7sOHpV/dbtG0EpjtTNz/9VOr41r8AUCT7VzhLGaOIRNzuA19ucUPB97nk2cjT5YJoarhALM+xnmjvUR3gEIKAELEq26eLxTwAsP6dkx90vHvyHGOM/udRq7mewiwuqxvmRGpMPQ64HRc/fuwRMCEDCSDSx6v13W3O0n/sTAD64CAnhuSXinIBAMEkBCL9zu2Q1UwItU8AgFJ226UyFwBE+EZiWbu0JkLWVZn+Ci9/7nHKxwBAVedWp0DuvJ8ZExR3UQV/Aw+Hh+ti4FrPAAAAAElFTkSuQmCC">
+<base target="_blank">
 </head>
 <body>
 
@@ -177,7 +178,8 @@ body.light .feedback-form textarea::placeholder{color:#94a3b8!important;}
 
 <div id="loadingScreen" style="position:fixed;inset:0;z-index:9999;background:#0a0f1e;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;">
  <img src="/logo.png" alt="HasibPro" style="width:80px;height:80px;object-fit:contain;">
- <div style="width:36px;height:36px;border:3px solid rgba(0,212,170,0.2);border-top-color:#00d4aa;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+ <div id="loadingSpinner" style="width:36px;height:36px;border:3px solid rgba(0,212,170,0.2);border-top-color:#00d4aa;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+ <div id="loadingError" style="display:none;color:#fca5a5;font-size:13px;font-family:Cairo,sans-serif;text-align:center;max-width:300px;line-height:1.8;padding:0 20px;"></div>
  <style>@keyframes spin{to{transform:rotate(360deg);}}</style>
 </div>
 
@@ -577,12 +579,18 @@ body.light .feedback-form textarea::placeholder{color:#94a3b8!important;}
 // ===== SUPABASE =====
 const SUPABASE_URL='https://aikfhneieichdkdcrwjs.supabase.co';
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFpa2ZobmVpZWljaGRrZGNyd2pzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNTYyNjAsImV4cCI6MjA5MzYzMjI2MH0.9qgNjqlVy94zK5JtmzLi9AXWaiJwqh9BRMIxheSP6lI';
+const safeStorage={
+ getItem:(k)=>{try{return localStorage.getItem(k)}catch(e){return null}},
+ setItem:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},
+ removeItem:(k)=>{try{localStorage.removeItem(k)}catch(e){}}
+};
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{
  auth:{
  detectSessionInUrl:true,
  persistSession:true,
  autoRefreshToken:true,
- storageKey:'hasibpro-auth'
+ storageKey:'hasibpro-auth',
+ storage:safeStorage
  }
 });
 if(window.HP) HP.initSession(sb);
@@ -1441,12 +1449,13 @@ window.addEventListener('DOMContentLoaded', async () => {
   };
 
   const showError = (msg) => {
-    const ls = document.getElementById('loadingScreen');
-    if(!ls) return;
-    // Remove old spinner
-    const spinner = ls.querySelector('.spinner');
+    const spinner = document.getElementById('loadingSpinner');
+    const errDiv = document.getElementById('loadingError');
     if(spinner) spinner.style.display = 'none';
-    ls.innerHTML += '<div style="color:#ef4444;font-size:13px;font-family:Cairo,sans-serif;text-align:center;max-width:280px;margin-top:16px;line-height:1.8;">' + msg + '<br><br><a href="/auth.html" style="background:linear-gradient(135deg,#00d4aa,#4e8ef7);color:#000;padding:10px 24px;border-radius:8px;text-decoration:none;font-weight:800;font-size:13px;">← العودة لتسجيل الدخول</a></div>';
+    if(errDiv) {
+      errDiv.style.display = 'block';
+      errDiv.innerHTML = msg + '<br><br><a href="/auth.html" style="display:inline-block;background:linear-gradient(135deg,#00d4aa,#4e8ef7);color:#000;padding:10px 24px;border-radius:8px;text-decoration:none;font-weight:800;font-size:13px;">← العودة لتسجيل الدخول</a>';
+    }
   };
 
   const startApp = async (session) => {
@@ -1536,8 +1545,11 @@ window.addEventListener('DOMContentLoaded', async () => {
   } catch(err) {
     if(!appInitialized) {
       if(err.message === 'timeout') {
-        showError('انتهت مدة الانتظار — تحقق من الاتصال بالإنترنت');
+        showError('⏳ انتهت مدة الانتظار — تحقق من الاتصال بالإنترنت');
+      } else if(err.message && err.message.includes('storage')) {
+        showError('🔒 المتصفح يحجب التخزين — جرب متصفح آخر (Chrome/Firefox)');
       } else {
+        console.error('Init error:', err);
         window.location.href = '/auth.html';
       }
     }
