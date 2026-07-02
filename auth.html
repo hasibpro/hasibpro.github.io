@@ -42,6 +42,7 @@ input:focus{border-color:#00d4aa;box-shadow:0 0 0 3px rgba(0,212,170,.1);}
 @keyframes spin{to{transform:rotate(360deg)}}
 .spin{width:15px;height:15px;border:2px solid rgba(0,0,0,.3);border-top-color:#000;border-radius:50%;animation:spin .7s linear infinite;}
 </style>
+<base target="_blank">
 </head>
 <body>
 <div class="card">
@@ -86,9 +87,27 @@ input:focus{border-color:#00d4aa;box-shadow:0 0 0 3px rgba(0,212,170,.1);}
 <script>
 const SUPABASE_URL = 'https://aikfhneieichdkdcrwjs.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFpa2ZobmVpZWljaGRrZGNyd2pzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNTYyNjAsImV4cCI6MjA5MzYzMjI2MH0.9qgNjqlVy94zK5JtmzLi9AXWaiJwqh9BRMIxheSP6lI';
+const safeStorage={
+ getItem:(k)=>{try{return localStorage.getItem(k)}catch(e){return null}},
+ setItem:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},
+ removeItem:(k)=>{try{localStorage.removeItem(k)}catch(e){}}
+};
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-  auth: {detectSessionInUrl:true, persistSession:true, autoRefreshToken:true}
+  auth: {detectSessionInUrl:true, persistSession:true, autoRefreshToken:true, storage:safeStorage}
 });
+
+// ===== RATE LIMITING =====
+let lastOtpRequest=0;
+const OTP_COOLDOWN=60;
+function canRequestOTP(){
+ const now=Math.floor(Date.now()/1000);
+ const elapsed=now-lastOtpRequest;
+ if(elapsed<OTP_COOLDOWN){
+  showAlert('للأمان، خاصك تستنى '+(OTP_COOLDOWN-elapsed)+' ثانية قبل إعادة الطلب');
+  return false;
+ }
+ return true;
+}
 
 // If already logged in → go to app
 sb.auth.getSession().then(({data:{session}}) => {
@@ -150,11 +169,13 @@ async function doLogin(e) {
 
 async function doRegister(e) {
   e.preventDefault(); clearAlert();
+  if(!canRequestOTP()) return;
   const name  = document.getElementById('rn').value.trim();
   const email = document.getElementById('re').value.trim();
   const pass  = document.getElementById('rp').value;
   if(pass.length < 8) { showAlert('كلمة المرور يجب أن تكون 8 أحرف على الأقل'); return; }
   setLoading('registerBtn', true, 'إنشاء حساب مجاني');
+  lastOtpRequest=Math.floor(Date.now()/1000);
   const {data, error} = await sb.auth.signUp({
     email, password: pass,
     options: {
@@ -185,13 +206,17 @@ async function doGoogle() {
 
 async function doForgot(e) {
   e.preventDefault();
+  if(!canRequestOTP()) return;
   const email = document.getElementById('le').value.trim();
   if(!email) { showAlert('أدخل بريدك الإلكتروني في خانة تسجيل الدخول أولاً'); return; }
+  setLoading('loginBtn', true, 'دخول');
+  lastOtpRequest=Math.floor(Date.now()/1000);
   const {error} = await sb.auth.resetPasswordForEmail(email, {
     redirectTo: window.location.origin + '/auth.html'
   });
   if(error) showAlert(error.message);
   else showAlert('تم إرسال رابط إعادة التعيين إلى بريدك ✅', 'success');
+  setLoading('loginBtn', false, 'دخول');
 }
 </script>
 </body>
