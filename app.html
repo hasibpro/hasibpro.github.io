@@ -475,6 +475,13 @@ body.light .feedback-form textarea::placeholder{color:#94a3b8!important;}
 
  <!-- AI Chat (Pro only) -->
  <div id="aiContent" style="display:none">
+ <div class="card" id="autoInsightCard">
+ <div class="card-title" style="justify-content:space-between;display:flex;align-items:center">
+ <span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-bottom:1px"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg> تحليل تلقائي لوضعك</span>
+ <button class="btn btn-secondary" style="font-size:10px;padding:5px 8px" onclick="runAutoInsight(true)">🔄 تحديث</button>
+ </div>
+ <div id="autoInsightBody" style="padding:6px 2px;color:var(--text3);font-size:11px">اضغط "تحديث" أو افتح هذا التبويب للحصول على تحليل تلقائي لوضع متجرك بناءً على بياناتك الحقيقية.</div>
+ </div>
  <div class="card">
  <div class="card-title"><span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-bottom:1px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span> تحدث مع مساعدك الذكي</div>
  <div class="ai-msgs" id="aiMsgs">
@@ -756,6 +763,7 @@ function showTab(id,btn){
  const isPro=(currentPlan==='pro')||(currentPlan==='trial');
  if(aiGate) aiGate.style.display=isPro?'none':'block';
  if(aiContent) aiContent.style.display=isPro?'block':'none';
+ if(isPro) runAutoInsight(false);
  },50);
  }
  if(id==='comparison')renderCompare();
@@ -1040,85 +1048,93 @@ function renderDashChart(){
 }
 
 // ===== AI =====
-async function sendAI(){
- if(window.HP&&!HP.canSendAI()){addMsg('⚠️ كثرت الرسائل — انتظر دقيقة وحاول مرة أخرى','ai');return;}
- const input=document.getElementById('aiInput');
- const rawMsg=input.value.trim();if(!rawMsg)return;
- // <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-bottom:1px"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Sanitize input
- const msg=window.HP ? HP.sanitize(rawMsg) : rawMsg.slice(0,2000);
- if(!msg)return;
- input.value='';addMsg(msg,'user');
- const lid='l'+Date.now();addMsg('⏳ جاري التحليل...','ai',lid);
+// ===== Structured JSON context builder (Source of Truth for the AI) =====
+// Shared by sendAI() (reactive chat) and runAutoInsight() (proactive
+// analysis card) so both features always see the exact same real data.
+// Sent record-by-record (not pre-aggregated) so the model can do real
+// month-vs-month / platform-vs-platform comparisons itself instead of
+// relying on a lossy text summary. Empty sections are sent as [] / null
+// explicitly so the AI can say "no data available" instead of guessing.
+function buildAIContext(){
  const k=document.getElementById('platform').value;
- // Build rich context from all app data
- const _sp = document.getElementById('salePrice')?.value||'0';
- const _cp = document.getElementById('productCost')?.value||'0';
- const _sh = document.getElementById('shipping')?.value||'0';
- const _ad = document.getElementById('adCost')?.value||'0';
- const _pk = document.getElementById('packaging')?.value||'0';
- const _oc = document.getElementById('otherCost')?.value||'0';
- const _mg = document.getElementById('r-margin')?.textContent||'0%';
- const _pr = document.getElementById('r-profit')?.textContent||'0';
- const _tc = document.getElementById('r-total')?.textContent||'0';
- const _br = document.getElementById('r-break')?.textContent||'0';
- const _roa= document.getElementById('r-roa')?.textContent||'—';
- const _pn = document.getElementById('productName')?.value||'—';
+ const product={
+   name: document.getElementById('productName')?.value||null,
+   platform: PLATS[k]?.name||null,
+   salePrice: +document.getElementById('salePrice')?.value||0,
+   productCost: +document.getElementById('productCost')?.value||0,
+   shipping: +document.getElementById('shipping')?.value||0,
+   packaging: +document.getElementById('packaging')?.value||0,
+   adCost: +document.getElementById('adCost')?.value||0,
+   otherCost: +document.getElementById('otherCost')?.value||0,
+   totalCost: window._lastTotalCost||0,
+   profitPerUnit: +(document.getElementById('r-profit')?.textContent||'').replace(/[^0-9.-]/g,'')||0,
+   margin: document.getElementById('r-margin')?.textContent||null,
+   breakEvenUnits: document.getElementById('r-break')?.textContent||null
+ };
+ const pricing={
+   targetMarginPct: document.getElementById('targetMargin')?.value?(+document.getElementById('targetMargin').value):null,
+   competitorPrice: document.getElementById('competitorPrice')?.value?(+document.getElementById('competitorPrice').value):null,
+   fixedMonthlyCosts: document.getElementById('fixedMonthlyCosts')?.value?(+document.getElementById('fixedMonthlyCosts').value):null,
+   recommendedPrice: window._lastRecPrice||null,
+   breakEvenUnitsMonthly: document.getElementById('p-breakeven-units')?.textContent&&document.getElementById('p-breakeven-units').textContent!=='-'?document.getElementById('p-breakeven-units').textContent:null
+ };
+ // Cap history sent to the AI at the most recent 24 months to keep the
+ // request size/token usage reasonable for stores with years of data.
+ // Filter out untouched placeholder rows (all-zero) so an empty result
+ // means "the user hasn't entered anything here yet" — not a fabricated
+ // zero-activity record — matching the "explicit empty array" requirement.
+ const monthlySorted=sortedMonthly().filter(m=>(m.u||0)>0||(m.r||0)>0||(m.c||0)>0||(m.t||0)>0);
+ const monthly=monthlySorted.slice(-24).map(m=>({
+   year:m.y, month:MONTHS[m.m], units:m.u||0, revenue:m.r||0, cost:m.c||0,
+   target:m.t||0, profit:(m.r||0)-(m.c||0)
+ }));
+ const ads=(adsData||[]).filter(a=>(a.sp||0)>0||(a.rv||0)>0||(a.un||0)>0).map(a=>({
+   platform:a.p||null, note:a.note||null, spend:a.sp||0, revenue:a.rv||0, units:a.un||0,
+   roas: a.sp>0?+(a.rv/a.sp).toFixed(2):null,
+   costPerUnit: a.un>0?+(a.sp/a.un).toFixed(2):null
+ }));
+ return JSON.stringify({product, pricing, monthly, ads, currency:curCode});
+}
 
- // Monthly totals
- const _mTotal = (window.monthlyData||[]).reduce((s,m)=>({r:s.r+(m.r||0),c:s.c+(m.c||0),u:s.u+(m.u||0)}),{r:0,c:0,u:0});
- const _mProfit = _mTotal.r - _mTotal.c;
-
- // Pricing section
- const _tgtMargin = document.getElementById('targetMargin')?.value||'—';
- const _sugPrice = document.getElementById('r-suggested')?.textContent||'—';
-
- // ROAS section
- const _adSpend = document.getElementById('totalAdSpend')?.value||'—';
- const _revenue = document.getElementById('totalRevenue')?.value||'—';
- const _roasVal = document.getElementById('r-roas-val')?.textContent||'—';
-
- const systemPrompt = [
- 'أنت مستشار خبير في التجارة الإلكترونية للسوق المغربي والعربي.',
- 'قواعد الإجابة:',
- '- أجب بنفس لغة السؤال (دارجة مغربية أو عربية فصحى)',
- '- كن مختصراً وعملياً — أعطِ أرقاماً وتوصيات واضحة',
- '- لا تكرر البيانات، ركز على التحليل والنصائح',
- '',
- 'بيانات المتجر الحالية:',
- '- المنتج: ' + _pn + ' | المنصة: ' + (PLATS[k]?.name||'—') + ' | العملة: ' + curCode,
- '- سعر البيع: ' + _sp + ' | تكلفة المنتج: ' + _cp + ' | الشحن: ' + _sh,
- '- الإعلانات: ' + _ad + ' | التغليف: ' + _pk + ' | أخرى: ' + _oc,
- '- إجمالي التكاليف: ' + _tc + ' | صافي الربح/وحدة: ' + _pr,
- '- هامش الربح: ' + _mg + ' | نقطة التعادل: ' + _br + ' وحدة',
- '- ROAS: ' + _roa,
- '',
- 'التتبع الشهري السنوي:',
- '- الإيرادات: ' + _mTotal.r.toLocaleString() + ' | التكاليف: ' + _mTotal.c.toLocaleString() + ' | صافي الربح: ' + _mProfit.toLocaleString() + ' ' + curCode,
- '',
- 'التسعير والإعلانات:',
- '- الهامش المستهدف: ' + _tgtMargin + '% | السعر المقترح: ' + _sugPrice,
- '- ROAS المحسوب: ' + _roasVal
- ].join('\n');
- try{
+// Shared low-level call to the /api/chat backend. Returns the assistant's
+// text or throws an Error whose .message is one of 'rate_limit',
+// 'unauthorized', or 'server_error_<code>' for the callers to translate
+// into a user-facing message.
+async function callAIBackend(userText){
  const resp = await fetch('/api/chat', {
  method: 'POST',
  headers: {'Content-Type': 'application/json'},
  body: JSON.stringify({
- system: systemPrompt,
- messages: [{role: 'user', content: msg}]
+ system: buildAIContext(),
+ messages: [{role: 'user', content: userText}]
  })
  });
-
  if(!resp.ok) {
  const status = resp.status;
  if(status === 429) throw new Error('rate_limit');
  if(status === 401) throw new Error('unauthorized');
  throw new Error('server_error_' + status);
  }
-
  const d = await resp.json();
- const txt = d.content?.[0]?.text || '';
+ return d.content?.[0]?.text || '';
+}
+function aiErrorMessage(e){
+ if(e.message === 'rate_limit') return '⚠️ كثرت الطلبات — انتظر دقيقة وحاول مجدداً';
+ if(e.message === 'unauthorized') return '⚠️ انتهت جلستك — سجل دخولك من جديد';
+ return '⚠️ مشكل في الاتصال — تحقق من الإنترنت وحاول مرة أخرى';
+}
 
+async function sendAI(){
+ if(window.HP&&!HP.canSendAI()){addMsg('⚠️ كثرت الرسائل — انتظر دقيقة وحاول مرة أخرى','ai');return;}
+ const input=document.getElementById('aiInput');
+ const rawMsg=input.value.trim();if(!rawMsg)return;
+ // Sanitize input
+ const msg=window.HP ? HP.sanitize(rawMsg) : rawMsg.slice(0,2000);
+ if(!msg)return;
+ input.value='';addMsg(msg,'user');
+ const lid='l'+Date.now();addMsg('⏳ جاري التحليل...','ai',lid);
+ try{
+ const txt=await callAIBackend(msg);
  const msgEl = document.getElementById(lid);
  if(msgEl) {
  msgEl.innerHTML = '<div class="msg-label">🤖 المساعد</div>';
@@ -1131,11 +1147,41 @@ async function sendAI(){
  }
  } catch(e) {
  const msgEl = document.getElementById(lid);
- let errMsg = '⚠️ مشكل في الاتصال — تحقق من الإنترنت وحاول مرة أخرى';
- if(e.message === 'rate_limit') errMsg = '⚠️ كثرت الطلبات — انتظر دقيقة وحاول مجدداً';
- if(e.message === 'unauthorized') errMsg = '⚠️ انتهت جلستك — سجل دخولك من جديد';
- if(msgEl) msgEl.innerHTML = '<div class="msg-label">🤖 المساعد</div><div>' + errMsg + '</div>';
+ if(msgEl) msgEl.innerHTML = '<div class="msg-label">🤖 المساعد</div><div>' + aiErrorMessage(e) + '</div>';
  console.error('AI error:', e.message);
+ }
+}
+
+// ===== PHASE 2: Proactive automatic insight card =====
+// Triggered when the user opens the AI tab (once per session — cached in
+// _autoInsightState so we don't burn a Groq call/rate-limit slot on every
+// tab switch) or manually via the refresh button. Reuses the exact same
+// structured data as the chat (buildAIContext/callAIBackend) so the
+// insight is always grounded in the same source of truth, never invented.
+let _autoInsightState={loaded:false,loading:false};
+function renderInsightCard(html){
+ const box=document.getElementById('autoInsightBody');if(!box)return;
+ box.innerHTML=html;
+}
+async function runAutoInsight(force){
+ if(_autoInsightState.loading)return;
+ if(_autoInsightState.loaded && !force)return;
+ const isPro=(currentPlan==='pro')||(currentPlan==='trial');
+ if(!isPro)return;
+ _autoInsightState.loading=true;
+ renderInsightCard('<div style="color:var(--text3);font-size:11px">⏳ جاري فحص وضع متجرك...</div>');
+ const question='قم بإجراء تحليل استباقي شامل لكل بيانات المتجر (الأرباح، التكاليف، التتبع الشهري، عائد الإعلانات) بالاعتماد فقط على البيانات المرفقة، واذكر أهم 1 إلى 3 ملاحظات (فرصة، مشكلة، أو تنبيه) تستحق انتباه صاحب المتجر الآن. كن مختصراً جداً (سطر أو سطرين لكل ملاحظة). إذا كانت البيانات غير كافية لأي تحليل مفيد، قل ذلك بوضوح بدل اختراع ملاحظات.';
+ try{
+ const txt=await callAIBackend(question);
+ const safe=document.createElement('div');safe.style.cssText='white-space:pre-wrap;line-height:1.7;font-size:12px';safe.textContent=txt||'لم يصل جواب — حاول التحديث';
+ renderInsightCard('');
+ document.getElementById('autoInsightBody').appendChild(safe);
+ _autoInsightState.loaded=true;
+ } catch(e){
+ renderInsightCard('<div style="color:var(--red);font-size:11px">'+aiErrorMessage(e)+'</div>');
+ console.error('Auto-insight error:', e.message);
+ } finally {
+ _autoInsightState.loading=false;
  }
 }
 
