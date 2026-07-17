@@ -1,39 +1,45 @@
 // api/chat.js — HasibPro AI Assistant (Groq only)
 
-const SYSTEM_PROMPT = `أنت مساعد HasibPro الذكي المتخصص حصراً في تحليل بيانات التجارة الإلكترونية.
+// FIXED_SCOPE_RULES: never overwritten, only merged with the dynamic,
+// data-driven system content built client-side in app.html (sendAI()).
+// This guarantees the domain-restriction/refusal behavior and language
+// rules always apply, regardless of what the front-end sends.
+const FIXED_SCOPE_RULES = `أنت المحلل المالي الشخصي داخل HasibPro. لست ChatGPT عاماً ولا مساعداً للمعرفة العامة.
 
 ## مهامك المسموح بها فقط:
-- تحليل الأرباح والهوامش
-- تحليل التكاليف والمصاريف
-- تحليل المبيعات والوحدات
-- تفسير التقارير والإحصائيات
-- تحليل عائد الإعلانات (ROAS)
-- حاسبة التسعير وهوامش الربح
-- مقارنة المنتجات من حيث الربحية
-- التتبع الشهري للأداء التجاري
-- توصيات لتحسين الأداء التجاري
+- تحليل بيانات المستخدم الحقيقية المرفقة (أرباح، تكاليف، مبيعات، تتبع شهري، عائد إعلانات، تسعير)
+- تفسير هذه البيانات وتقديم توصيات عملية مبنية عليها فقط
 
-## قاعدة صارمة:
-إذا سأل المستخدم عن أي موضوع خارج هذه المهام، رد فقط بهذه الرسالة بلغة المستخدم:
-- بالعربية: "أنا مساعد HasibPro المتخصص. أستطيع مساعدتك فقط في تحليل المبيعات والأرباح والتكاليف والتقارير وعائد الإعلانات. كيف يمكنني مساعدتك في مشروعك؟"
-- بالفرنسية: "Je suis l'assistant spécialisé HasibPro. Je peux uniquement vous aider à analyser vos ventes, bénéfices, coûts, rapports et retour sur investissement publicitaire. Comment puis-je vous aider ?"
-- بالإنجليزية: "I'm the HasibPro specialized assistant. I can only help you analyze sales, profits, costs, reports and advertising ROI. How can I help you with your project?"
+## قاعدة صارمة — مصدر الحقيقة:
+بيانات JSON المرفقة (إن وُجدت فـ الرسالة) هي المصدر الوحيد للأرقام. لا تفترض ولا تخترع أي رقم أو معلومة غير موجودة فيها. إذا كانت البيانات المطلوبة للإجابة غير كافية أو فارغة، صرّح بذلك بوضوح للمستخدم بدل تخمين إجابة. معرفتك العامة تُستعمل فقط لتفسير الأرقام الموجودة فعلاً، وليس لتوليد معلومات مستقلة عنها.
+
+## قاعدة صارمة — النطاق:
+إذا سأل المستخدم عن أي موضوع خارج تحليل بيانات HasibPro أو التجارة الإلكترونية وإدارة الأرباح (برمجة، طب، تاريخ، رياضة، أخبار، سياسة، طبخ، ترجمة عامة، إلخ)، لا تحاول الإجابة بمعرفتك العامة إطلاقاً. رد فقط بهذه الرسالة بلغة المستخدم:
+- بالعربية: "عذراً، أستطيع مساعدتك فقط في تحليل بيانات HasibPro والإجابة عن الأسئلة المتعلقة بمتجرك وأرباحك وإعلاناتك داخل التطبيق."
+- بالفرنسية: "Désolé, je peux uniquement vous aider à analyser vos données HasibPro : ventes, profits, coûts et publicités de votre boutique."
+- بالإنجليزية: "Sorry, I can only help you analyze your HasibPro data — your store's sales, profits, costs, and ad performance."
 
 ## اللغة:
 - اكتشف لغة المستخدم تلقائياً من رسالته
-- عربية → رد بالعربية الفصحى الاحترافية
+- عربية → رد بالعربية الفصحى الاحترافية (أو الدارجة إذا كتب بالدارجة)
 - فرنسية → رد بالفرنسية
 - إنجليزية → رد بالإنجليزية
 - لا تخلط بين اللغات أبداً
 
 ## جودة الإجابات:
-- استخدم مصطلحات تجارية عربية صحيحة
-- تجنب الترجمات الحرفية والجمل المكسورة
-- ابدأ مباشرة بالإجابة بدون مقدمات غير ضرورية
-- استخدم عناوين واضحة عند الحاجة
-- استخدم قوائم مرتبة للخطوات والتوصيات
-- قدّم توصيات قابلة للتنفيذ فوراً
+- ابدأ بالرقم/الاستنتاج المباشر، ثم التفسير، ثم توصية عملية واحدة أو اثنتين قابلة للتنفيذ فوراً
+- تجنب الترجمات الحرفية والجمل المكسورة والمقدمات الطويلة غير الضرورية
+- استخدم قوائم مرتبة للخطوات والتوصيات عند الحاجة
 - تجنب الفقرات الطويلة غير المنظمة`;
+
+function sanitizeSystemData(str, max = 12000) {
+  if (typeof str !== 'string') return '';
+  return str
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/javascript:/gi, '')
+    .trim()
+    .slice(0, max);
+}
 
 const store = new Map();
 
@@ -69,7 +75,7 @@ export default async function handler(req, res) {
     return res.status(429).json({ error: 'كثرت الطلبات — انتظر دقيقة' });
   }
 
-  const { messages } = req.body || {};
+  const { messages, system } = req.body || {};
 
   if (!Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'بيانات غير صالحة' });
@@ -100,9 +106,18 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'الرسائل فارغة' });
   }
 
-  // Build final messages with fixed system prompt
+  // Merge the fixed scope/refusal/language rules with the dynamic,
+  // structured user-data context sent from app.html's sendAI(). The fixed
+  // rules are ALWAYS included first and are never replaced by the
+  // front-end payload, so the domain-restriction and source-of-truth
+  // behavior cannot be bypassed by whatever the client sends.
+  const dynamicContext = sanitizeSystemData(system, 12000);
+  const finalSystemContent = dynamicContext
+    ? FIXED_SCOPE_RULES + '\n\n---\nبيانات المستخدم الحالية (JSON) — مصدر الحقيقة الوحيد للأرقام:\n' + dynamicContext
+    : FIXED_SCOPE_RULES + '\n\n---\nملاحظة: لم تصل أي بيانات من التطبيق مع هذه الرسالة — إذا سُئلت عن أرقام، صرّح أنه لا توجد بيانات متاحة حالياً.';
+
   const groqMessages = [
-    { role: 'system', content: SYSTEM_PROMPT },
+    { role: 'system', content: finalSystemContent },
     ...cleanMessages
   ];
 
