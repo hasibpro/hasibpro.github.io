@@ -1646,27 +1646,56 @@ function _runPDF(_eb) {
         <span>HasibPro — أداة مالية ذكية للتجارة الإلكترونية</span><span>hasibpro.com</span>
       </div>`;
 
+    // NOTE: an earlier version used jsPDF's built-in async `.html()` renderer
+    // with `autoPaging:'text'`. That mode is documented by jsPDF itself as
+    // unreliable with non-table/flex-based layouts and produced fully
+    // blank pages in real testing. Fixed by rendering the report with
+    // html2canvas directly into ONE tall image, then manually slicing that
+    // image across as many A4 pages as needed — the standard, battle-tested
+    // pattern for long HTML-to-PDF exports (small trade-off: a table row
+    // may rarely be visually split across a page break, but it never
+    // produces a blank page).
     const container=document.createElement('div');
     container.id='pdfReportContainer';
-    container.style.cssText='position:fixed;top:0;left:-99999px;width:780px;background:#ffffff;font-family:Cairo,sans-serif;direction:rtl;color:#1e293b;padding:28px 32px;';
+    // Positioned at top-left and pushed behind everything (z-index) rather
+    // than off-screen with an extreme negative offset — extreme offsets are
+    // a known cause of html2canvas capturing a blank/empty canvas.
+    container.style.cssText='position:fixed;top:0;left:0;width:780px;z-index:-9999;opacity:0.01;pointer-events:none;background:#ffffff;font-family:Cairo,sans-serif;direction:rtl;color:#1e293b;padding:28px 32px;';
     container.innerHTML=reportHtml;
     document.body.appendChild(container);
 
-    const doc=new jsPDF({orientation:'p',unit:'mm',format:'a4'});
-    doc.html(container,{
-      x:0,y:0,
-      width:190, // mm — content width inside A4 margins
-      windowWidth:780, // px — matches container width above
-      autoPaging:'text',
-      html2canvas:{scale:2, backgroundColor:'#ffffff', useCORS:true},
-      margin:[10,10,10,10],
-      callback:function(doc){
-        document.body.removeChild(container);
-        doc.save('HasibPro-Report.pdf');
-        _eb.forEach(b=>{b.disabled=false;b.textContent='✅ تم التحميل';});
-        setTimeout(()=>_eb.forEach(b=>{b.textContent='تصدير PDF';}),2500);
-      }
-    });
+    // Give the browser a moment to lay out/paint the container (fonts,
+    // the base64 logo image) before html2canvas captures it.
+    setTimeout(()=>{
+      html2canvas(container,{scale:2, backgroundColor:'#ffffff', useCORS:true})
+        .then(canvas=>{
+          document.body.removeChild(container);
+          if(!canvas.width || !canvas.height){ throw new Error('empty_canvas'); }
+          const imgData=canvas.toDataURL('image/png');
+          const doc=new jsPDF({orientation:'p',unit:'mm',format:'a4'});
+          const pageW=210, pageH=297;
+          const imgW=pageW;
+          const imgH=canvas.height*imgW/canvas.width;
+          let heightLeft=imgH, position=0, first=true;
+          while(heightLeft>0){
+            if(!first) doc.addPage();
+            doc.addImage(imgData,'PNG',0,position,imgW,imgH);
+            heightLeft-=pageH;
+            position-=pageH;
+            first=false;
+          }
+          doc.save('HasibPro-Report.pdf');
+          _eb.forEach(b=>{b.disabled=false;b.textContent='✅ تم التحميل';});
+          setTimeout(()=>_eb.forEach(b=>{b.textContent='تصدير PDF';}),2500);
+        })
+        .catch(err=>{
+          const leftover=document.getElementById('pdfReportContainer');
+          if(leftover)document.body.removeChild(leftover);
+          console.error('PDF render error:',err);
+          _eb.forEach(b=>{b.disabled=false;b.textContent='تصدير PDF';});
+          alert('خطأ فـ توليد الصورة — حاول مرة أخرى');
+        });
+    },150);
   } catch(err){
     const leftover=document.getElementById('pdfReportContainer');
     if(leftover)document.body.removeChild(leftover);
