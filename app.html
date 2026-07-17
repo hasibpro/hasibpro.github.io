@@ -345,29 +345,51 @@ body.light .feedback-form textarea::placeholder{color:#94a3b8!important;}
 <div class="section" id="tab-monthly">
  <div class="section-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-bottom:1px"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> التتبع الشهري</div>
  <div class="card">
+ <div class="card-title" style="justify-content:space-between;display:flex;align-items:center">
+ <span>السجل الشهري</span>
+ <div style="display:flex;gap:6px;align-items:center">
+ <select class="form-select" id="monthlyYearFilter" style="width:auto;font-size:10px;padding:5px 8px" onchange="renderMonthly()"></select>
+ <button class="btn btn-secondary" style="font-size:10px;padding:5px 8px" onclick="openAddMonth()">+ إضافة شهر</button>
+ </div>
+ </div>
+ <div id="addMonthRow" style="display:none;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:flex-end;background:var(--bg3);padding:8px;border-radius:8px">
+ <div class="form-group"><label class="form-label">السنة</label><input class="form-input" id="newMonthYear" type="number" style="width:90px" value=""></div>
+ <div class="form-group"><label class="form-label">الشهر</label><select class="form-select" id="newMonthIdx" style="width:110px"></select></div>
+ <button class="btn btn-primary" style="font-size:11px" onclick="addMonthEntry()">إضافة</button>
+ <button class="btn btn-secondary" style="font-size:11px" onclick="document.getElementById('addMonthRow').style.display='none'">إلغاء</button>
+ </div>
  <div class="table-wrap">
  <table>
- <thead><tr><th>الشهر</th><th>الوحدات</th><th>الإيرادات</th><th>التكاليف</th><th>صافي الربح</th><th>نمو %</th></tr></thead>
+ <thead><tr><th>الشهر</th><th>الوحدات</th><th>الإيرادات</th><th>التكاليف</th><th>الهدف</th><th>صافي الربح</th><th>نمو %</th><th></th></tr></thead>
  <tbody id="monthlyBody"></tbody>
- <tfoot><tr class="totals-row"><td>الإجمالي</td><td id="t-un"></td><td id="t-rv"></td><td id="t-co"></td><td id="t-pr"></td><td>-</td></tr></tfoot>
+ <tfoot><tr class="totals-row"><td>الإجمالي</td><td id="t-un"></td><td id="t-rv"></td><td id="t-co"></td><td>-</td><td id="t-pr"></td><td>-</td><td></td></tr></tfoot>
  </table>
  </div>
  <div class="chart-wrap" style="margin-top:12px"><canvas id="monthlyChart"></canvas></div>
- <div class="btn-row"><button class="btn btn-primary" onclick="exportPDF()" style="display:inline-flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> تصدير PDF</button></div>
+ <div style="margin-top:10px;padding:9px;background:var(--bg3);border-radius:8px;font-size:10px;color:var(--text3)">
+ إجمالي الإنفاق الإعلاني (كل المنصات، من قسم عائد الإعلانات): <span id="adsSpendSummary" style="color:var(--teal);font-weight:700">0</span> <span class="cur-lbl">درهم</span>
+ </div>
+ <div class="btn-row">
+ <button class="btn btn-primary" onclick="exportPDF()" style="display:inline-flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> تصدير PDF</button>
+ <button class="btn btn-secondary" onclick="exportMonthlyCSV()" style="display:inline-flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> تصدير CSV</button>
+ </div>
  </div>
 </div>
 
 <div class="section" id="tab-ads">
  <div class="section-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-bottom:1px"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> عائد الإعلانات</div>
  <div class="card">
+ <div class="card-title">إضافة منصة/حملة</div>
+ <div id="adQuickAdd" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px"></div>
  <div class="table-wrap">
  <table>
- <thead><tr><th>المنصة</th><th>الإنفاق</th><th>الإيرادات</th><th>الوحدات</th><th>عائد الإنفاق</th><th>تكلفة/وحدة</th><th>الحالة</th></tr></thead>
+ <thead><tr><th>المنصة</th><th>الفترة/الحملة</th><th>الإنفاق</th><th>الإيرادات</th><th>الوحدات</th><th>عائد الإنفاق</th><th>تكلفة/وحدة</th><th>الحالة</th><th></th></tr></thead>
  <tbody id="adsBody"></tbody>
- <tfoot><tr class="totals-row"><td>الإجمالي</td><td id="a-sp"></td><td id="a-rv"></td><td id="a-un"></td><td id="a-ro"></td><td id="a-cp"></td><td></td></tr></tfoot>
+ <tfoot><tr class="totals-row"><td>الإجمالي</td><td></td><td id="a-sp"></td><td id="a-rv"></td><td id="a-un"></td><td id="a-ro"></td><td id="a-cp"></td><td></td><td></td></tr></tfoot>
  </table>
  </div>
  <div class="chart-wrap" style="margin-top:12px"><canvas id="adsChart"></canvas></div>
+ <div class="btn-row"><button class="btn btn-secondary" onclick="exportAdsCSV()" style="display:inline-flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> تصدير CSV</button></div>
  </div>
  <div class="card">
  <div class="card-title"><span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-bottom:1px"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span> دليل عائد الإنفاق الإعلاني</div>
@@ -387,6 +409,7 @@ body.light .feedback-form textarea::placeholder{color:#94a3b8!important;}
  <div class="form-grid">
  <div class="form-group"><label class="form-label">الهامش المستهدف %</label><input class="form-input" id="targetMargin" type="number" value="35" oninput="calcPricing()"></div>
  <div class="form-group"><label class="form-label">سعر المنافس (اختياري)</label><input class="form-input" id="competitorPrice" type="number" placeholder="250" oninput="calcPricing()"></div>
+ <div class="form-group"><label class="form-label">التكاليف الثابتة الشهرية (اختياري)</label><input class="form-input" id="fixedMonthlyCosts" type="number" placeholder="مثال: 2000" oninput="calcPricing()"></div>
  </div>
  <div style="margin-top:9px;padding:9px;background:var(--bg3);border-radius:8px;font-size:10px;color:var(--text3)">
  إجمالي التكاليف/وحدة: <span id="pricingCosts" style="color:var(--teal);font-weight:700">0</span> <span class="cur-lbl">درهم</span>
@@ -404,10 +427,28 @@ body.light .feedback-form textarea::placeholder{color:#94a3b8!important;}
  <div class="result-item"><div class="result-label">فجوة مع المنافس</div><div class="result-value" id="p-gap">-</div></div>
  <div class="result-item"><div class="result-label">توصية</div><div class="result-value" id="p-note" style="font-size:10px">-</div></div>
  </div>
+ <div class="btn-row" style="margin-top:10px"><button class="btn btn-primary" onclick="useRecommendedPrice()" style="width:100%;justify-content:center">استعمل هذا السعر في الحاسبة</button></div>
+ </div>
+ <div class="card" id="breakEvenCard" style="display:none">
+ <div class="card-title"><span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-bottom:1px"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.1-2.8-2.8L7 14.1"/></svg></span> نقطة التعادل الشهرية</div>
+ <div style="text-align:center;padding:10px 0">
+ <div style="font-size:30px;font-weight:900;color:var(--teal)" id="p-breakeven-units">-</div>
+ <div style="font-size:11px;color:var(--text3);margin-top:4px">وحدة/شهر لتغطية التكاليف الثابتة</div>
+ </div>
+ <div style="font-size:10px;color:var(--text3);text-align:center" id="p-breakeven-note"></div>
  </div>
  <div class="card">
  <div class="card-title"><span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-bottom:1px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span> نقاط سعر سريعة</div>
  <div id="quickPrices"></div>
+ </div>
+ <div class="card">
+ <div class="card-title"><span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-bottom:1px"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></span> الربح حسب حجم المبيعات</div>
+ <div class="table-wrap">
+ <table>
+ <thead><tr><th>الوحدات/الشهر</th><th>إجمالي الربح</th><th>صافي بعد التكاليف الثابتة</th></tr></thead>
+ <tbody id="profitVolumeBody"></tbody>
+ </table>
+ </div>
  </div>
  <div class="card">
  <div class="card-title"><span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-bottom:1px"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span> دليل الهوامش</div>
@@ -666,9 +707,32 @@ function onPlatChange(){
 }
 
 const MONTHS=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-let monthlyData=[{u:0,r:0,c:0},{u:0,r:0,c:0},{u:0,r:0,c:0},{u:0,r:0,c:0},{u:0,r:0,c:0},{u:0,r:0,c:0},{u:0,r:0,c:0},{u:0,r:0,c:0},{u:0,r:0,c:0},{u:0,r:0,c:0},{u:0,r:0,c:0},{u:0,r:0,c:0}];
-let adsData=[{p:'فيسبوك',sp:0,rv:0,un:0},{p:'جوجل',sp:0,rv:0,un:0},{p:'تيك توك',sp:0,rv:0,un:0}];
+const AD_PLATFORMS=['فيسبوك/إنستغرام','تيك توك','جوجل/يوتيوب','سناب شات','بينتيريست','مؤثر (Influencer)','أخرى'];
+function curYear(){return new Date().getFullYear();}
+// monthlyData entries: {y:year, m:monthIndex(0-11), u:units, r:revenue, c:cost, t:target(optional)}
+let monthlyData=Array.from({length:12},(_,i)=>({y:curYear(),m:i,u:0,r:0,c:0,t:0}));
+// adsData entries: {p:platform name, note:period/campaign label (optional), sp:spend, rv:revenue, un:units}
+let adsData=[{p:'فيسبوك/إنستغرام',note:'',sp:0,rv:0,un:0},{p:'جوجل/يوتيوب',note:'',sp:0,rv:0,un:0},{p:'تيك توك',note:'',sp:0,rv:0,un:0}];
+// Expose to window so the AI-assistant system-prompt builder (which reads
+// window.monthlyData/window.adsData) can see real data. Plain `let` at
+// script top-level does NOT create a window property, so without this the
+// AI always saw empty arrays regardless of what the user entered.
+window.monthlyData=monthlyData;window.adsData=adsData;
 let compareData=[null,null,null];
+// Backward-compat migration: old saved data was a fixed 12-slot array with no y/m keys
+function migrateMonthlyData(arr){
+ if(!Array.isArray(arr)||arr.length===0)return Array.from({length:12},(_,i)=>({y:curYear(),m:i,u:0,r:0,c:0,t:0}));
+ if(arr[0]&&arr[0].y!==undefined&&arr[0].m!==undefined)return arr.map(e=>({t:0,...e}));
+ // legacy shape: assume current year, index = month
+ return arr.slice(0,12).map((e,i)=>({y:curYear(),m:i,u:e.u||0,r:e.r||0,c:e.c||0,t:0}));
+}
+function migrateAdsData(arr){
+ if(!Array.isArray(arr)||arr.length===0)return [{p:'فيسبوك/إنستغرام',note:'',sp:0,rv:0,un:0}];
+ return arr.map(e=>({note:'',...e}));
+}
+function sortedMonthly(){return [...monthlyData].sort((a,b)=>a.y-b.y||a.m-b.m);}
+function monthLabel(e){return MONTHS[e.m]+' '+e.y;}
+function monthYearsList(){return [...new Set(monthlyData.map(e=>e.y))].sort((a,b)=>b-a);}
 let charts={};
 let isDark=true;
 
@@ -786,49 +850,123 @@ function renderCompareChart(){
 
 function renderMonthly(){
  const tbody=document.getElementById('monthlyBody');tbody.innerHTML='';
+ populateMonthlyYearFilter();
+ const yf=document.getElementById('monthlyYearFilter');
+ const selYear=yf&&yf.value?yf.value:'all';
  let tu=0,tr=0,tc=0,tp=0;
- monthlyData.forEach((m,i)=>{
- const prof=m.r-m.c;const prev=i>0?monthlyData[i-1].r-monthlyData[i-1].c:0;
- const grow=i===0?'-':prev===0?'-':(((prof-prev)/Math.abs(prev))*100).toFixed(1)+'%';
+ const sorted=sortedMonthly();
+ const rows=selYear==='all'?sorted:sorted.filter(e=>String(e.y)===String(selYear));
+ rows.forEach((m,idx)=>{
+ const i=monthlyData.indexOf(m);
+ const prevEntry=idx>0?rows[idx-1]:null;
+ const prof=m.r-m.c;const prev=prevEntry?prevEntry.r-prevEntry.c:0;
+ const grow=!prevEntry?'-':prev===0?'-':(((prof-prev)/Math.abs(prev))*100).toFixed(1)+'%';
  const gc=grow==='-'?'':parseFloat(grow)>=0?'color:var(--green)':'color:var(--red)';
- tbody.innerHTML+=`<tr><td>${MONTHS[i]}</td><td><input class="td-input" type="number" value="${m.u}" onchange="updM(${i},'u',this.value)"></td><td><input class="td-input" type="number" value="${m.r}" onchange="updM(${i},'r',this.value)"></td><td><input class="td-input" type="number" value="${m.c}" onchange="updM(${i},'c',this.value)"></td><td style="${prof>=0?'color:var(--green)':'color:var(--red)'};font-weight:700">${fmt(prof)}</td><td style="${gc}">${grow}</td></tr>`;
+ const target=m.t||0;
+ const tProgress=target>0?Math.round((prof/target)*100):null;
+ const tCell=target>0?`<span style="font-size:9px;color:${prof>=target?'var(--green)':'var(--text3)'}">${tProgress}%</span>`:'<span style="color:var(--text3);font-size:9px">-</span>';
+ tbody.innerHTML+=`<tr><td>${monthLabel(m)}</td><td><input class="td-input" type="number" value="${m.u}" onchange="updM(${i},'u',this.value)"></td><td><input class="td-input" type="number" value="${m.r}" onchange="updM(${i},'r',this.value)"></td><td><input class="td-input" type="number" value="${m.c}" onchange="updM(${i},'c',this.value)"></td><td><input class="td-input" type="number" value="${target}" placeholder="0" onchange="updM(${i},'t',this.value)" style="width:56px"></td><td style="${prof>=0?'color:var(--green)':'color:var(--red)'};font-weight:700">${fmt(prof)}${tCell?(' '+tCell):''}</td><td style="${gc}">${grow}</td><td><button class="btn-icon" title="حذف" onclick="removeMonthEntry(${i})" style="color:var(--red);background:none;border:none;cursor:pointer;font-size:13px">✕</button></td></tr>`;
  tu+=m.u;tr+=m.r;tc+=m.c;tp+=prof;
  });
  document.getElementById('t-un').textContent=tu;document.getElementById('t-rv').textContent=fmt(tr);document.getElementById('t-co').textContent=fmt(tc);document.getElementById('t-pr').textContent=fmt(tp);
- renderMonthlyChart();
+ renderMonthlyChart(rows);
+ const totalAdSpend=adsData.reduce((s,a)=>s+(+a.sp||0),0);
+ const spendEl=document.getElementById('adsSpendSummary');if(spendEl)spendEl.textContent=fmt(totalAdSpend);
  const drev=document.getElementById('d-rev');const dcosts=document.getElementById('d-costs');const dp=document.getElementById('d-profit');const dm=document.getElementById('d-margin');
  if(drev)drev.textContent=fmt(tr);if(dcosts)dcosts.textContent=fmt(tc);
  if(dp){dp.textContent=fmt(tp);dp.style.color=tp>=0?'var(--teal)':'var(--red)';}
  if(dm)dm.textContent=tr>0?p2(tp/tr):'0%';
 }
+function populateMonthlyYearFilter(){
+ const yf=document.getElementById('monthlyYearFilter');if(!yf)return;
+ const cur=yf.value;
+ const years=monthYearsList();
+ yf.innerHTML='<option value="all">كل السنوات</option>'+years.map(y=>`<option value="${y}">${y}</option>`).join('');
+ if(cur&&(cur==='all'||years.map(String).includes(cur)))yf.value=cur;
+}
+function openAddMonth(){
+ const box=document.getElementById('addMonthRow');if(!box)return;
+ box.style.display=box.style.display==='none'?'flex':'none';
+ const yInput=document.getElementById('newMonthYear');if(yInput&&!yInput.value)yInput.value=curYear();
+ const mSel=document.getElementById('newMonthIdx');
+ if(mSel&&!mSel.options.length)mSel.innerHTML=MONTHS.map((mn,i)=>`<option value="${i}">${mn}</option>`).join('');
+}
+function addMonthEntry(){
+ const y=+document.getElementById('newMonthYear').value||curYear();
+ const m=+document.getElementById('newMonthIdx').value||0;
+ if(monthlyData.some(e=>e.y===y&&e.m===m)){alert('هذا الشهر مضاف من قبل');return;}
+ monthlyData.push({y,m,u:0,r:0,c:0,t:0});
+ document.getElementById('addMonthRow').style.display='none';
+ renderMonthly();saveState();
+}
+function removeMonthEntry(i){
+ if(!confirm('حذف هذا الشهر من السجل؟'))return;
+ monthlyData.splice(i,1);
+ if(monthlyData.length===0)monthlyData.push({y:curYear(),m:new Date().getMonth(),u:0,r:0,c:0,t:0});
+ renderMonthly();saveState();
+}
 function updM(i,k,v){monthlyData[i][k]=+v;renderMonthly();saveState();}
 
-function renderMonthlyChart(){
+function renderMonthlyChart(rows){
  const ctx=document.getElementById('monthlyChart');if(!ctx)return;
  if(charts.monthly)charts.monthly.destroy();
- const profs=monthlyData.map(m=>m.r-m.c);
- charts.monthly=new Chart(ctx,{type:'line',data:{labels:MONTHS,datasets:[{label:'صافي الربح',data:profs,borderColor:'#00d4aa',backgroundColor:'rgba(0,212,170,0.08)',tension:0.4,fill:true,pointRadius:3},{label:'الإيرادات',data:monthlyData.map(m=>m.r),borderColor:'#3b82f6',tension:0.4,fill:false,pointRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{family:'Cairo',size:10}}}},scales:{x:{ticks:{color:'#94a3b8',font:{family:'Cairo',size:9}},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#94a3b8',font:{family:'Cairo',size:9}},grid:{color:'rgba(255,255,255,0.04)'}}}}});
+ const data=rows||sortedMonthly();
+ const profs=data.map(m=>m.r-m.c);
+ charts.monthly=new Chart(ctx,{type:'line',data:{labels:data.map(m=>monthLabel(m)),datasets:[{label:'صافي الربح',data:profs,borderColor:'#00d4aa',backgroundColor:'rgba(0,212,170,0.08)',tension:0.4,fill:true,pointRadius:3},{label:'الإيرادات',data:data.map(m=>m.r),borderColor:'#3b82f6',tension:0.4,fill:false,pointRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{family:'Cairo',size:10}}}},scales:{x:{ticks:{color:'#94a3b8',font:{family:'Cairo',size:9}},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#94a3b8',font:{family:'Cairo',size:9}},grid:{color:'rgba(255,255,255,0.04)'}}}}});
 }
 
+function renderAdQuickAdd(){
+ const box=document.getElementById('adQuickAdd');if(!box)return;
+ box.innerHTML=AD_PLATFORMS.map(p=>`<button class="btn btn-secondary" style="font-size:10px;padding:4px 9px" onclick="addAdEntry('${p.replace(/'/g,"\\'")}')">+ ${p}</button>`).join('');
+}
+function addAdEntry(platform){
+ adsData.push({p:platform||'منصة جديدة',note:'',sp:0,rv:0,un:0});
+ renderAds();saveState();
+}
+function removeAdEntry(i){
+ if(!confirm('حذف هذه المنصة/الحملة؟'))return;
+ adsData.splice(i,1);
+ if(adsData.length===0)adsData.push({p:'فيسبوك/إنستغرام',note:'',sp:0,rv:0,un:0});
+ renderAds();saveState();
+}
 function renderAds(){
+ renderAdQuickAdd();
  const tbody=document.getElementById('adsBody');tbody.innerHTML='';
  let tsp=0,trv=0,tun=0;
  adsData.forEach((a,i)=>{
  const roas=a.sp>0?(a.rv/a.sp).toFixed(2):0;const cpa=a.un>0?(a.sp/a.un).toFixed(2):0;
  const badge=roas<2?'<span class="badge badge-red">ضعيف <svg width="15" height="15" viewBox="0 0 24 24" fill="#ef4444" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-bottom:1px"><circle cx="12" cy="12" r="10"/></svg></span>':roas<4?'<span class="badge badge-yellow">جيد <svg width="15" height="15" viewBox="0 0 24 24" fill="#f59e0b" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-bottom:1px"><circle cx="12" cy="12" r="10"/></svg></span>':'<span class="badge badge-green">ممتاز <svg width="15" height="15" viewBox="0 0 24 24" fill="#10b981" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-bottom:1px"><circle cx="12" cy="12" r="10"/></svg></span>';
- tbody.innerHTML+=`<tr><td style="font-weight:700">${a.p}</td><td><input class="td-input" type="number" value="${a.sp}" onchange="updA(${i},'sp',this.value)"></td><td><input class="td-input" type="number" value="${a.rv}" onchange="updA(${i},'rv',this.value)"></td><td><input class="td-input" type="number" value="${a.un}" onchange="updA(${i},'un',this.value)"></td><td style="font-weight:700;color:var(--teal)">${roas}x</td><td>${fmt(cpa)}</td><td>${badge}</td></tr>`;
+ tbody.innerHTML+=`<tr><td><input class="td-input" type="text" value="${(a.p||'').replace(/"/g,'&quot;')}" onchange="updA(${i},'p',this.value)" style="font-weight:700;width:100px"></td><td><input class="td-input" type="text" value="${(a.note||'').replace(/"/g,'&quot;')}" onchange="updA(${i},'note',this.value)" placeholder="مثال: نونبر" style="width:80px"></td><td><input class="td-input" type="number" value="${a.sp}" onchange="updA(${i},'sp',this.value)"></td><td><input class="td-input" type="number" value="${a.rv}" onchange="updA(${i},'rv',this.value)"></td><td><input class="td-input" type="number" value="${a.un}" onchange="updA(${i},'un',this.value)"></td><td style="font-weight:700;color:var(--teal)">${roas}x</td><td>${fmt(cpa)}</td><td>${badge}</td><td><button class="btn-icon" title="حذف" onclick="removeAdEntry(${i})" style="color:var(--red);background:none;border:none;cursor:pointer;font-size:13px">✕</button></td></tr>`;
  tsp+=a.sp;trv+=a.rv;tun+=a.un;
  });
  const tr2=tsp>0?(trv/tsp).toFixed(2):0;const tc2=tun>0?(tsp/tun).toFixed(2):0;
  document.getElementById('a-sp').textContent=fmt(tsp);document.getElementById('a-rv').textContent=fmt(trv);document.getElementById('a-un').textContent=tun;document.getElementById('a-ro').textContent=tr2+'x';document.getElementById('a-cp').textContent=fmt(tc2);
  renderAdsChart();saveState();
+ const spendEl=document.getElementById('adsSpendSummary');if(spendEl)spendEl.textContent=fmt(tsp);
 }
-function updA(i,k,v){adsData[i][k]=+v;renderAds();saveState();}
+function updA(i,k,v){adsData[i][k]=(k==='p'||k==='note')?v:+v;renderAds();saveState();}
 
 function renderAdsChart(){
  const ctx=document.getElementById('adsChart');if(!ctx)return;
  if(charts.ads)charts.ads.destroy();
- charts.ads=new Chart(ctx,{type:'bar',data:{labels:adsData.map(a=>a.p),datasets:[{label:'الإنفاق',data:adsData.map(a=>a.sp),backgroundColor:'rgba(239,68,68,0.7)',borderRadius:5},{label:'الإيرادات',data:adsData.map(a=>a.rv),backgroundColor:'rgba(16,185,129,0.7)',borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{family:'Cairo'}}}},scales:{x:{ticks:{color:'#94a3b8',font:{family:'Cairo'}},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#94a3b8',font:{family:'Cairo'}},grid:{color:'rgba(255,255,255,0.04)'}}}}});
+ charts.ads=new Chart(ctx,{type:'bar',data:{labels:adsData.map(a=>a.p+(a.note?(' ('+a.note+')'):''))
+,datasets:[{label:'الإنفاق',data:adsData.map(a=>a.sp),backgroundColor:'rgba(239,68,68,0.7)',borderRadius:5},{label:'الإيرادات',data:adsData.map(a=>a.rv),backgroundColor:'rgba(16,185,129,0.7)',borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{family:'Cairo'}}}},scales:{x:{ticks:{color:'#94a3b8',font:{family:'Cairo'}},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#94a3b8',font:{family:'Cairo'}},grid:{color:'rgba(255,255,255,0.04)'}}}}});
+}
+
+function exportMonthlyCSV(){
+ let csv='﻿'+'الشهر,الوحدات,الإيرادات,التكاليف,الهدف,صافي الربح\n';
+ sortedMonthly().forEach(m=>{csv+=`${monthLabel(m)},${m.u},${m.r},${m.c},${m.t||0},${m.r-m.c}\n`;});
+ downloadCSV(csv,'hasibpro-monthly.csv');
+}
+function exportAdsCSV(){
+ let csv='﻿'+'المنصة,الفترة,الإنفاق,الإيرادات,الوحدات,عائد الإنفاق\n';
+ adsData.forEach(a=>{const roas=a.sp>0?(a.rv/a.sp).toFixed(2):0;csv+=`${a.p},${a.note||''},${a.sp},${a.rv},${a.un},${roas}\n`;});
+ downloadCSV(csv,'hasibpro-ads.csv');
+}
+function downloadCSV(content,filename){
+ const blob=new Blob([content],{type:'text/csv;charset=utf-8;'});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
 }
 
 function calcPricing(){
@@ -836,15 +974,45 @@ function calcPricing(){
  document.getElementById('pricingCosts').textContent=fmt(total);
  const target=(+document.getElementById('targetMargin').value||35)/100;
  const comp=+document.getElementById('competitorPrice').value||0;
+ const fixedCosts=+document.getElementById('fixedMonthlyCosts')?.value||0;
  const sym=CURRENCIES[curCode].sym;
  if(total===0)return;
  const rec=total/(1-target);const prof=rec-total;const marg=rec>0?prof/rec:0;
+ window._lastRecPrice=rec;
  document.getElementById('p-rec').textContent=fmt(rec);document.getElementById('p-profit').textContent=fmt(prof);
  setV('p-margin',p2(marg),mCol(marg));
  if(comp>0){const gap=rec-comp;setV('p-gap',(gap>0?'+':'')+fmt(gap)+' '+sym,gap>0?'red':'green');document.getElementById('p-note').textContent=gap>0?'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-bottom:1px"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> سعرك أغلى من المنافس':'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-bottom:1px"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> سعرك تنافسي';}
  else{document.getElementById('p-gap').textContent='-';document.getElementById('p-note').textContent='أدخل سعر المنافس للمقارنة';}
  const qp=document.getElementById('quickPrices');
  qp.innerHTML=['20%','30% (موصى به)','40%','50%'].map((l,i)=>{const m2=[0.2,0.3,0.4,0.5][i];return`<div class="pricing-row"><span style="font-size:12px;color:var(--text2)">${l}</span><span style="font-size:14px;font-weight:800;color:var(--teal)">${fmt(total/(1-m2))} ${sym}</span></div>${i<3?'<div class="divider"></div>':''}`;}).join('');
+ const beCard=document.getElementById('breakEvenCard');
+ if(fixedCosts>0&&prof>0){
+ beCard.style.display='block';
+ const units=Math.ceil(fixedCosts/prof);
+ document.getElementById('p-breakeven-units').textContent=units;
+ document.getElementById('p-breakeven-note').textContent=`بسعر ${fmt(rec)} ${sym} وربح ${fmt(prof)} ${sym}/وحدة، تحتاج ${units} وحدة شهرياً لتغطية ${fmt(fixedCosts)} ${sym} تكاليف ثابتة`;
+ }else{
+ beCard.style.display='none';
+ }
+ const volumes=[50,100,200,500];
+ const pvBody=document.getElementById('profitVolumeBody');
+ if(pvBody){
+ pvBody.innerHTML=volumes.map(v=>{
+ const gross=prof*v;const net=gross-fixedCosts;
+ return `<tr><td>${v}</td><td style="color:var(--green);font-weight:700">${fmt(gross)}</td><td style="${net>=0?'color:var(--green)':'color:var(--red)'};font-weight:700">${fmt(net)}</td></tr>`;
+ }).join('');
+ }
+}
+function useRecommendedPrice(){
+ const rec=window._lastRecPrice;
+ if(!rec){alert('أدخل التكاليف في حاسبة التكلفة أولاً');return;}
+ const salePriceEl=document.getElementById('salePrice');
+ if(!salePriceEl){alert('حقل السعر غير موجود');return;}
+ salePriceEl.value=Math.round(rec*100)/100;
+ if(typeof calcProduct==='function')calcProduct();
+ if(typeof saveState==='function')saveState();
+ const navBtn=document.querySelector('.nav-tab[onclick*="calculator"]');
+ showTab('calculator',navBtn);
 }
 
 function updateDashboard(){
@@ -1251,8 +1419,9 @@ async function loadState(){
  if(!currentUserId)return;
  const {data,error}=await sb.from('user_data').select('*').eq('user_id',currentUserId).single();
  if(error||!data){checkTrial(null);return;}
- if(data.monthly_data&&data.monthly_data.length===12)monthlyData=data.monthly_data;
- if(data.ads_data&&data.ads_data.length>0)adsData=data.ads_data;
+ if(data.monthly_data)monthlyData=migrateMonthlyData(data.monthly_data);
+ if(data.ads_data)adsData=migrateAdsData(data.ads_data);
+ window.monthlyData=monthlyData;window.adsData=adsData;
  if(data.currency){curCode=data.currency;const sel=document.getElementById('curSel');if(sel)sel.value=curCode;const c=CURRENCIES[curCode];document.getElementById('curBadge').textContent=c.sym+' '+curCode;document.querySelectorAll('.cur-lbl').forEach(el=>el.textContent=c.sym);}
  if(data.theme==='light'){isDark=false;document.body.classList.add('light');const tb=document.getElementById('themeBtn');if(tb)tb.innerHTML='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-bottom:1px"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';}
  checkTrial(data);
@@ -1377,14 +1546,17 @@ function _runPDF(_eb) {
     y+=8;
 
     // MONTHLY
-    const mData=window.monthlyData||[];
+    // Uses the dynamic, year-aware monthlyData shape ({y,m,u,r,c,t}) sorted
+    // chronologically, with each row labeled via its own year/month
+    // (MONTHS[m.m] + m.y) instead of assuming a fixed 12-slot Jan-Dec array.
+    const monthNames=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+    const mData=(window.monthlyData||[]).slice().sort((a,b)=>(a.y-b.y)||(a.m-b.m));
     if(mData.some(m=>(m.r||0)>0||(m.u||0)>0)){
       if(y>225){doc.addPage();y=15;}
       doc.setFillColor(15,23,42); doc.roundedRect(mL,y,180,8,2,2,'F');
       doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(0,212,170);
       doc.text('التتبع الشهري',mR,y+5.5,{align:'right'});
       y+=12;
-      const months=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
       const cols=[195,163,128,93,58];
       const hdrs=['الشهر','الوحدات','الإيرادات','التكاليف','صافي الربح'];
       doc.setFillColor(15,23,42); doc.rect(mL,y,180,8,'F');
@@ -1395,10 +1567,12 @@ function _runPDF(_eb) {
       y+=8;
       let tR=0,tC=0,tU=0;
       mData.forEach((m,i)=>{
+        if(y>270){doc.addPage();y=15;}
         const p=(m.r||0)-(m.c||0); tR+=m.r||0; tC+=m.c||0; tU+=m.u||0;
+        const label=(monthNames[m.m]||'—')+' '+(m.y||'');
         doc.setFillColor(i%2===0?18:15,i%2===0?31:23,i%2===0?54:42);
         doc.rect(mL,y,180,7,'F');
-        [months[i],String(m.u||0),String((m.r||0).toLocaleString()),String((m.c||0).toLocaleString()),String(p.toLocaleString())].forEach((v,j)=>{
+        [label,String(m.u||0),String((m.r||0).toLocaleString()),String((m.c||0).toLocaleString()),String(p.toLocaleString())].forEach((v,j)=>{
           doc.setFont('helvetica',j===4?'bold':'normal'); doc.setFontSize(8.5);
           doc.setTextColor(j===4?(p>=0?0:239):232,j===4?(p>=0?212:68):240,j===4?(p>=0?170:68):254);
           doc.text(v,cols[j],y+5,{align:'right'});
@@ -1410,6 +1584,46 @@ function _runPDF(_eb) {
       doc.setFont('helvetica','bold'); doc.setFontSize(9);
       ['الإجمالي',String(tU),String(tR.toLocaleString()),String(tC.toLocaleString()),String(tp.toLocaleString())].forEach((v,j)=>{
         doc.setTextColor(0,212,170); doc.text(v,cols[j],y+5.5,{align:'right'});
+      });
+      y+=12;
+    }
+
+    // ADS / ROAS
+    const adData=window.adsData||[];
+    if(adData.some(a=>(a.sp||0)>0||(a.rv||0)>0)){
+      if(y>225){doc.addPage();y=15;}
+      doc.setFillColor(15,23,42); doc.roundedRect(mL,y,180,8,2,2,'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(0,212,170);
+      doc.text('عائد الإعلانات',mR,y+5.5,{align:'right'});
+      y+=12;
+      const acols=[195,150,110,75,45];
+      const ahdrs=['المنصة','الإنفاق','الإيرادات','الوحدات','عائد الإنفاق'];
+      doc.setFillColor(15,23,42); doc.rect(mL,y,180,8,'F');
+      ahdrs.forEach((h,i)=>{
+        doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(0,212,170);
+        doc.text(h,acols[i],y+5.5,{align:'right'});
+      });
+      y+=8;
+      let tSp=0,tRv=0,tUn=0;
+      adData.forEach((a,i)=>{
+        if(y>270){doc.addPage();y=15;}
+        const roas=a.sp>0?(a.rv/a.sp).toFixed(2):'0';
+        tSp+=a.sp||0;tRv+=a.rv||0;tUn+=a.un||0;
+        const label=a.p+(a.note?(' - '+a.note):'');
+        doc.setFillColor(i%2===0?18:15,i%2===0?31:23,i%2===0?54:42);
+        doc.rect(mL,y,180,7,'F');
+        [label,String((a.sp||0).toLocaleString()),String((a.rv||0).toLocaleString()),String(a.un||0),roas+'x'].forEach((v,j)=>{
+          doc.setFont('helvetica',j===4?'bold':'normal'); doc.setFontSize(8.5);
+          doc.setTextColor(232,240,254);
+          doc.text(v,acols[j],y+5,{align:'right'});
+        });
+        y+=7;
+      });
+      const tRoas=tSp>0?(tRv/tSp).toFixed(2):'0';
+      doc.setFillColor(0,59,42); doc.rect(mL,y,180,8,'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(9);
+      ['الإجمالي',String(tSp.toLocaleString()),String(tRv.toLocaleString()),String(tUn),tRoas+'x'].forEach((v,j)=>{
+        doc.setTextColor(0,212,170); doc.text(v,acols[j],y+5.5,{align:'right'});
       });
     }
 
@@ -1462,11 +1676,17 @@ window.addEventListener('DOMContentLoaded', async () => {
       if(window.location.hash.includes('access_token')) {
         window.history.replaceState(null, '', window.location.pathname);
       }
-      // If on deployment-specific URL, redirect to main domain after auth
+      // If on a Vercel preview/deployment-specific URL, redirect to the
+      // canonical production domain after auth so the session (stored per-origin
+      // in localStorage under storageKey 'hasibpro-auth') is used consistently.
+      // NOTE: this previously pointed to a stale/incorrect domain
+      // ('hasibpro.vercel.app') that doesn't match any real deployment or the
+      // custom domain (www.hasibpro.com), which could bounce logged-in users
+      // to the wrong origin. Fixed to the real canonical domain.
       const hostname = window.location.hostname;
-      if(hostname.includes('-hasibpros-projects.vercel.app') ||
-         hostname.includes('-git-main-hasibpros')) {
-        const mainUrl = 'https://hasibpro.vercel.app/app.html';
+      const CANONICAL_HOST = 'www.hasibpro.com';
+      if(hostname.endsWith('.vercel.app') && hostname !== CANONICAL_HOST) {
+        const mainUrl = 'https://' + CANONICAL_HOST + '/app.html';
         window.location.replace(mainUrl);
         return;
       }
