@@ -1690,8 +1690,13 @@ function _generatePDFReport(_eb, sections, docTitle, filename) {
         ['التغليف',      val('packaging')+' '+curSym],
         ['الإعلانات',    val('adCost')+' '+curSym],
         ['تكاليف أخرى', val('otherCost')+' '+curSym],
-        ['رسوم المنصة',  txt('r-fees')+' '+curSym],
-        ['نقطة التعادل', txt('r-break')+' وحدة'],
+        // NOTE: this previously read from 'r-fees'/'r-break', which don't
+        // exist anywhere on the page (the real ids are 'r-fee'/'r-brkev') —
+        // so these two rows always silently fell back to "0" regardless of
+        // the actual calculator values. That's very likely what looked
+        // "messed up" in the exported cost breakdown.
+        ['رسوم المنصة',  txt('r-fee')+' '+curSym],
+        ['نقطة التعادل', txt('r-brkev')+' وحدة'],
       ];
       costHtml=costRows.map(([l,v],i)=>_pdfRow(l,v,i%2===0)).join('');
     }
