@@ -1697,10 +1697,18 @@ function _generatePDFReport(_eb, sections, docTitle, filename) {
     }
 
     // ---- Monthly tracking (Monthly Tracking section only) ----
+    // NOTE: this used to filter out any month where units/revenue/cost were
+    // all zero, meant to avoid a report cluttered with untouched months.
+    // Real bug: a brand-new account's monthly table is a full 12-row
+    // skeleton of zeros (exactly what's shown on-screen in the app), so the
+    // filter silently removed EVERY row, leaving the whole section blank —
+    // the PDF looked broken even though it was "working as designed". Fixed
+    // by exporting exactly what the on-screen table shows (all recorded
+    // months, sorted), so the PDF never disagrees with what the user is
+    // looking at.
     let monthlyHtml='';
     if(sections.monthly){
-      const mData=(window.monthlyData||[]).filter(m=>(m.r||0)>0||(m.u||0)>0||(m.c||0)>0)
-        .slice().sort((a,b)=>(a.y-b.y)||(a.m-b.m));
+      const mData=(window.monthlyData||[]).slice().sort((a,b)=>(a.y-b.y)||(a.m-b.m));
       if(mData.length){
         let tR=0,tC=0,tU=0;
         const rows=mData.map((m,i)=>{
@@ -1718,13 +1726,21 @@ function _generatePDFReport(_eb, sections, docTitle, filename) {
         const hdr=_pdfTableHeader([{t:'الشهر',f:1.3,a:'right'},{t:'الوحدات'},{t:'الإيرادات'},{t:'التكاليف'},{t:'صافي الربح'}]);
         const totalRow=_pdfTableTotal([{t:'الإجمالي',f:1.3,a:'right'},{t:String(tU)},{t:tR.toLocaleString()},{t:tC.toLocaleString()},{t:tp.toLocaleString()}]);
         monthlyHtml=_pdfSectionTitle('التتبع الشهري')+`<div style="border:1px solid ${PDF_BORDER};border-radius:6px;overflow:hidden;">`+hdr+rows+totalRow+`</div>`;
+      } else {
+        // Defensive fallback: only reachable if monthlyData is truly an
+        // empty array (shouldn't happen given the app always seeds 12
+        // months), but showing a clear message beats a silent blank gap.
+        monthlyHtml=_pdfSectionTitle('التتبع الشهري')+`<div style="padding:16px;text-align:center;color:${PDF_MUTED};font-size:11px;background:${PDF_SOFTBG};border-radius:6px;">لا توجد بيانات شهرية مسجلة بعد</div>`;
       }
     }
 
     // ---- Ads / ROAS (Ads section only — not wired to a button yet) ----
+    // Same fix as Monthly Tracking above: export whatever the on-screen
+    // table shows (no "has real data" filter that could silently blank
+    // the whole section for a fresh account with only default zero rows).
     let adsHtml='';
     if(sections.ads){
-      const adData=(window.adsData||[]).filter(a=>(a.sp||0)>0||(a.rv||0)>0);
+      const adData=(window.adsData||[]).slice();
       if(adData.length){
         let tSp=0,tRv=0,tUn=0;
         const rows=adData.map((a,i)=>{
@@ -1743,6 +1759,8 @@ function _generatePDFReport(_eb, sections, docTitle, filename) {
         const hdr=_pdfTableHeader([{t:'المنصة',f:1.4,a:'right'},{t:'الإنفاق'},{t:'الإيرادات'},{t:'الوحدات'},{t:'ROAS'}]);
         const totalRow=_pdfTableTotal([{t:'الإجمالي',f:1.4,a:'right'},{t:tSp.toLocaleString()},{t:tRv.toLocaleString()},{t:String(tUn)},{t:tRoas+'x'}]);
         adsHtml=_pdfSectionTitle('عائد الإعلانات')+`<div style="border:1px solid ${PDF_BORDER};border-radius:6px;overflow:hidden;">`+hdr+rows+totalRow+`</div>`;
+      } else {
+        adsHtml=_pdfSectionTitle('عائد الإعلانات')+`<div style="padding:16px;text-align:center;color:${PDF_MUTED};font-size:11px;background:${PDF_SOFTBG};border-radius:6px;">لا توجد بيانات إعلانات مسجلة بعد</div>`;
       }
     }
 
