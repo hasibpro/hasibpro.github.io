@@ -1677,7 +1677,15 @@ function _generatePDFReport(_eb, sections, docTitle, filename) {
         {l:'هامش الربح',      v:txt('r-margin'), neg:false},
       ];
       kpiHtml=kpis.map(k=>`<div style="flex:1;background:#ffffff;border:1px solid ${PDF_BORDER};border-top:3px solid ${k.neg?PDF_RED:PDF_TEAL};border-radius:6px;padding:12px 8px;text-align:center;">`
-        +`<div style="font-size:9px;color:${PDF_MUTED};margin-bottom:6px;letter-spacing:0.3px;">${k.l}</div>`
+        // NOTE: `letter-spacing` must never be applied to Arabic text — it
+        // forces extra gaps between every glyph, which breaks the natural
+        // cursive joining between Arabic letters (each letter has
+        // different initial/medial/final glyph forms that are only
+        // selected correctly when letters sit directly adjacent). The
+        // previous `letter-spacing:0.3px` here is exactly what made these
+        // KPI labels look disconnected/garbled in the exported PDF while
+        // every other (non-letter-spaced) label rendered fine.
+        +`<div style="font-size:9px;color:${PDF_MUTED};margin-bottom:6px;">${k.l}</div>`
         +`<div style="font-size:15px;font-weight:800;color:${k.neg?PDF_RED:PDF_INK}">${k.v}</div>`
         +`</div>`).join('');
 
