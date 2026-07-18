@@ -319,7 +319,7 @@ body.light .feedback-form textarea::placeholder{color:#94a3b8!important;}
  </div>
  <div class="chart-wrap" style="height:160px"><canvas id="costChart"></canvas></div>
  <div class="btn-row">
- <button class="btn btn-primary" onclick="exportPDF()" style="display:inline-flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> تصدير PDF</button>
+ <button class="btn btn-primary" onclick="exportCalculatorPDF()" style="display:inline-flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> تصدير PDF</button>
  <button class="btn btn-secondary" onclick="addToCompare()" style="display:inline-flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> أضف للمقارنة</button>
  </div>
  </div>
@@ -370,7 +370,7 @@ body.light .feedback-form textarea::placeholder{color:#94a3b8!important;}
  إجمالي الإنفاق الإعلاني (كل المنصات، من قسم عائد الإعلانات): <span id="adsSpendSummary" style="color:var(--teal);font-weight:700">0</span> <span class="cur-lbl">درهم</span>
  </div>
  <div class="btn-row">
- <button class="btn btn-primary" onclick="exportPDF()" style="display:inline-flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> تصدير PDF</button>
+ <button class="btn btn-primary" onclick="exportMonthlyPDF()" style="display:inline-flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> تصدير PDF</button>
  <button class="btn btn-secondary" onclick="exportMonthlyExcel()" style="display:inline-flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> تصدير Excel</button>
  </div>
  </div>
@@ -1592,14 +1592,26 @@ function initApp(){
 // jsPDF's built-in `.html()` renderer (which uses html2canvas under the
 // hood). This guarantees the PDF always looks exactly like properly
 // shaped Arabic text, with zero custom font-embedding/bidi code needed.
-function exportPDF() {
-  const _eb = document.querySelectorAll('[onclick="exportPDF()"]');
+function exportCalculatorPDF() {
+  _startPDFExport('[onclick="exportCalculatorPDF()"]', {calculator:true, monthly:false, ads:false}, 'تقرير حاسبة التكلفة', 'HasibPro-Calculator.pdf');
+}
+function exportMonthlyPDF() {
+  _startPDFExport('[onclick="exportMonthlyPDF()"]', {calculator:false, monthly:true, ads:false}, 'تقرير التتبع الشهري', 'HasibPro-Monthly.pdf');
+}
+// NOTE: each section's export button calls a DIFFERENT function above with
+// its own button selector + section flags + filename. Previously both the
+// Cost Calculator tab and the Monthly Tracking tab called the same
+// exportPDF(), which always generated the identical combined report
+// regardless of which tab the user was on. `_generatePDFReport` below is
+// the shared rendering engine; `sections` controls which parts it builds.
+function _startPDFExport(buttonSelector, sections, docTitle, filename) {
+  const _eb = document.querySelectorAll(buttonSelector);
   _eb.forEach(b => { b.disabled=true; b.textContent='⏳ جاري التحميل...'; });
   const need=[];
   if(!window.jspdf) need.push(_loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'));
   if(!window.html2canvas) need.push(_loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'));
   Promise.all(need)
-    .then(()=>_runPDF(_eb))
+    .then(()=>_generatePDFReport(_eb, sections, docTitle, filename))
     .catch(()=>{ _eb.forEach(b=>{b.disabled=false;b.textContent='تصدير PDF';}); alert('تعذّر تحميل مكتبات PDF'); });
 }
 function _loadScript(src){
@@ -1643,7 +1655,7 @@ function _pdfTableTotal(cols){
     +`</div>`;
 }
 
-function _runPDF(_eb) {
+function _generatePDFReport(_eb, sections, docTitle, filename) {
   try {
     const {jsPDF}=window.jspdf;
     const get=id=>document.getElementById(id);
@@ -1655,78 +1667,90 @@ function _runPDF(_eb) {
     const platEl=get('platform');
     const platform=platEl?.options[platEl?.selectedIndex]?.text||'—';
 
-    // ---- KPI cards ----
-    const kpis=[
-      {l:'سعر البيع',       v:val('salePrice')+' '+curSym, neg:false},
-      {l:'إجمالي التكاليف', v:txt('r-total')+' '+curSym, neg:false},
-      {l:'صافي الربح',      v:txt('r-profit')+' '+curSym, neg:(txt('r-profit')||'').includes('-')},
-      {l:'هامش الربح',      v:txt('r-margin'), neg:false},
-    ];
-    const kpiHtml=kpis.map(k=>`<div style="flex:1;background:#ffffff;border:1px solid ${PDF_BORDER};border-top:3px solid ${k.neg?PDF_RED:PDF_TEAL};border-radius:6px;padding:12px 8px;text-align:center;">`
-      +`<div style="font-size:9px;color:${PDF_MUTED};margin-bottom:6px;letter-spacing:0.3px;">${k.l}</div>`
-      +`<div style="font-size:15px;font-weight:800;color:${k.neg?PDF_RED:PDF_INK}">${k.v}</div>`
-      +`</div>`).join('');
+    // ---- KPI cards + cost breakdown (Cost Calculator section only) ----
+    let kpiHtml='', costHtml='';
+    if(sections.calculator){
+      const kpis=[
+        {l:'سعر البيع',       v:val('salePrice')+' '+curSym, neg:false},
+        {l:'إجمالي التكاليف', v:txt('r-total')+' '+curSym, neg:false},
+        {l:'صافي الربح',      v:txt('r-profit')+' '+curSym, neg:(txt('r-profit')||'').includes('-')},
+        {l:'هامش الربح',      v:txt('r-margin'), neg:false},
+      ];
+      kpiHtml=kpis.map(k=>`<div style="flex:1;background:#ffffff;border:1px solid ${PDF_BORDER};border-top:3px solid ${k.neg?PDF_RED:PDF_TEAL};border-radius:6px;padding:12px 8px;text-align:center;">`
+        +`<div style="font-size:9px;color:${PDF_MUTED};margin-bottom:6px;letter-spacing:0.3px;">${k.l}</div>`
+        +`<div style="font-size:15px;font-weight:800;color:${k.neg?PDF_RED:PDF_INK}">${k.v}</div>`
+        +`</div>`).join('');
 
-    // ---- Cost breakdown ----
-    const costRows=[
-      ['اسم المنتج',   val('productName')],
-      ['المنصة',       platform],
-      ['سعر البيع',    val('salePrice')+' '+curSym],
-      ['تكلفة المنتج', val('productCost')+' '+curSym],
-      ['الشحن',        val('shipping')+' '+curSym],
-      ['التغليف',      val('packaging')+' '+curSym],
-      ['الإعلانات',    val('adCost')+' '+curSym],
-      ['تكاليف أخرى', val('otherCost')+' '+curSym],
-      ['رسوم المنصة',  txt('r-fees')+' '+curSym],
-      ['نقطة التعادل', txt('r-break')+' وحدة'],
-    ];
-    const costHtml=costRows.map(([l,v],i)=>_pdfRow(l,v,i%2===0)).join('');
+      const costRows=[
+        ['اسم المنتج',   val('productName')],
+        ['المنصة',       platform],
+        ['سعر البيع',    val('salePrice')+' '+curSym],
+        ['تكلفة المنتج', val('productCost')+' '+curSym],
+        ['الشحن',        val('shipping')+' '+curSym],
+        ['التغليف',      val('packaging')+' '+curSym],
+        ['الإعلانات',    val('adCost')+' '+curSym],
+        ['تكاليف أخرى', val('otherCost')+' '+curSym],
+        ['رسوم المنصة',  txt('r-fees')+' '+curSym],
+        ['نقطة التعادل', txt('r-break')+' وحدة'],
+      ];
+      costHtml=costRows.map(([l,v],i)=>_pdfRow(l,v,i%2===0)).join('');
+    }
 
-    // ---- Monthly tracking (real dynamic data, chronological) ----
-    const mData=(window.monthlyData||[]).filter(m=>(m.r||0)>0||(m.u||0)>0||(m.c||0)>0)
-      .slice().sort((a,b)=>(a.y-b.y)||(a.m-b.m));
+    // ---- Monthly tracking (Monthly Tracking section only) ----
     let monthlyHtml='';
-    if(mData.length){
-      let tR=0,tC=0,tU=0;
-      const rows=mData.map((m,i)=>{
-        const p=(m.r||0)-(m.c||0); tR+=m.r||0; tC+=m.c||0; tU+=m.u||0;
-        const label=(typeof monthLabel==='function'?monthLabel(m):((MONTHS[m.m]||'—')+' '+(m.y||'')));
-        return `<div style="display:flex;justify-content:space-between;padding:7px 14px;background:${i%2===0?'#ffffff':PDF_SOFTBG};font-size:10px;border-bottom:1px solid ${PDF_BORDER};">`
-          +`<span style="flex:1.3;font-weight:700;color:${PDF_INK}">${label}</span>`
-          +`<span style="flex:1;text-align:center;color:${PDF_MUTED}">${m.u||0}</span>`
-          +`<span style="flex:1;text-align:center;color:${PDF_MUTED}">${(m.r||0).toLocaleString()}</span>`
-          +`<span style="flex:1;text-align:center;color:${PDF_MUTED}">${(m.c||0).toLocaleString()}</span>`
-          +`<span style="flex:1;text-align:center;font-weight:700;color:${p>=0?PDF_GREEN:PDF_RED}">${p.toLocaleString()}</span>`
-          +`</div>`;
-      }).join('');
-      const tp=tR-tC;
-      const hdr=_pdfTableHeader([{t:'الشهر',f:1.3,a:'right'},{t:'الوحدات'},{t:'الإيرادات'},{t:'التكاليف'},{t:'صافي الربح'}]);
-      const totalRow=_pdfTableTotal([{t:'الإجمالي',f:1.3,a:'right'},{t:String(tU)},{t:tR.toLocaleString()},{t:tC.toLocaleString()},{t:tp.toLocaleString()}]);
-      monthlyHtml=_pdfSectionTitle('التتبع الشهري')+`<div style="border:1px solid ${PDF_BORDER};border-radius:6px;overflow:hidden;">`+hdr+rows+totalRow+`</div>`;
+    if(sections.monthly){
+      const mData=(window.monthlyData||[]).filter(m=>(m.r||0)>0||(m.u||0)>0||(m.c||0)>0)
+        .slice().sort((a,b)=>(a.y-b.y)||(a.m-b.m));
+      if(mData.length){
+        let tR=0,tC=0,tU=0;
+        const rows=mData.map((m,i)=>{
+          const p=(m.r||0)-(m.c||0); tR+=m.r||0; tC+=m.c||0; tU+=m.u||0;
+          const label=(typeof monthLabel==='function'?monthLabel(m):((MONTHS[m.m]||'—')+' '+(m.y||'')));
+          return `<div style="display:flex;justify-content:space-between;padding:7px 14px;background:${i%2===0?'#ffffff':PDF_SOFTBG};font-size:10px;border-bottom:1px solid ${PDF_BORDER};">`
+            +`<span style="flex:1.3;font-weight:700;color:${PDF_INK}">${label}</span>`
+            +`<span style="flex:1;text-align:center;color:${PDF_MUTED}">${m.u||0}</span>`
+            +`<span style="flex:1;text-align:center;color:${PDF_MUTED}">${(m.r||0).toLocaleString()}</span>`
+            +`<span style="flex:1;text-align:center;color:${PDF_MUTED}">${(m.c||0).toLocaleString()}</span>`
+            +`<span style="flex:1;text-align:center;font-weight:700;color:${p>=0?PDF_GREEN:PDF_RED}">${p.toLocaleString()}</span>`
+            +`</div>`;
+        }).join('');
+        const tp=tR-tC;
+        const hdr=_pdfTableHeader([{t:'الشهر',f:1.3,a:'right'},{t:'الوحدات'},{t:'الإيرادات'},{t:'التكاليف'},{t:'صافي الربح'}]);
+        const totalRow=_pdfTableTotal([{t:'الإجمالي',f:1.3,a:'right'},{t:String(tU)},{t:tR.toLocaleString()},{t:tC.toLocaleString()},{t:tp.toLocaleString()}]);
+        monthlyHtml=_pdfSectionTitle('التتبع الشهري')+`<div style="border:1px solid ${PDF_BORDER};border-radius:6px;overflow:hidden;">`+hdr+rows+totalRow+`</div>`;
+      }
     }
 
-    // ---- Ads / ROAS (real dynamic data) ----
-    const adData=(window.adsData||[]).filter(a=>(a.sp||0)>0||(a.rv||0)>0);
+    // ---- Ads / ROAS (Ads section only — not wired to a button yet) ----
     let adsHtml='';
-    if(adData.length){
-      let tSp=0,tRv=0,tUn=0;
-      const rows=adData.map((a,i)=>{
-        const roas=a.sp>0?(a.rv/a.sp).toFixed(2):'0';
-        tSp+=a.sp||0;tRv+=a.rv||0;tUn+=a.un||0;
-        const label=a.p+(a.note?(' - '+a.note):'');
-        return `<div style="display:flex;justify-content:space-between;padding:7px 14px;background:${i%2===0?'#ffffff':PDF_SOFTBG};font-size:10px;border-bottom:1px solid ${PDF_BORDER};">`
-          +`<span style="flex:1.4;font-weight:700;color:${PDF_INK}">${label}</span>`
-          +`<span style="flex:1;text-align:center;color:${PDF_MUTED}">${(a.sp||0).toLocaleString()}</span>`
-          +`<span style="flex:1;text-align:center;color:${PDF_MUTED}">${(a.rv||0).toLocaleString()}</span>`
-          +`<span style="flex:1;text-align:center;color:${PDF_MUTED}">${a.un||0}</span>`
-          +`<span style="flex:1;text-align:center;font-weight:700;color:${PDF_TEAL}">${roas}x</span>`
-          +`</div>`;
-      }).join('');
-      const tRoas=tSp>0?(tRv/tSp).toFixed(2):'0';
-      const hdr=_pdfTableHeader([{t:'المنصة',f:1.4,a:'right'},{t:'الإنفاق'},{t:'الإيرادات'},{t:'الوحدات'},{t:'ROAS'}]);
-      const totalRow=_pdfTableTotal([{t:'الإجمالي',f:1.4,a:'right'},{t:tSp.toLocaleString()},{t:tRv.toLocaleString()},{t:String(tUn)},{t:tRoas+'x'}]);
-      adsHtml=_pdfSectionTitle('عائد الإعلانات')+`<div style="border:1px solid ${PDF_BORDER};border-radius:6px;overflow:hidden;">`+hdr+rows+totalRow+`</div>`;
+    if(sections.ads){
+      const adData=(window.adsData||[]).filter(a=>(a.sp||0)>0||(a.rv||0)>0);
+      if(adData.length){
+        let tSp=0,tRv=0,tUn=0;
+        const rows=adData.map((a,i)=>{
+          const roas=a.sp>0?(a.rv/a.sp).toFixed(2):'0';
+          tSp+=a.sp||0;tRv+=a.rv||0;tUn+=a.un||0;
+          const label=a.p+(a.note?(' - '+a.note):'');
+          return `<div style="display:flex;justify-content:space-between;padding:7px 14px;background:${i%2===0?'#ffffff':PDF_SOFTBG};font-size:10px;border-bottom:1px solid ${PDF_BORDER};">`
+            +`<span style="flex:1.4;font-weight:700;color:${PDF_INK}">${label}</span>`
+            +`<span style="flex:1;text-align:center;color:${PDF_MUTED}">${(a.sp||0).toLocaleString()}</span>`
+            +`<span style="flex:1;text-align:center;color:${PDF_MUTED}">${(a.rv||0).toLocaleString()}</span>`
+            +`<span style="flex:1;text-align:center;color:${PDF_MUTED}">${a.un||0}</span>`
+            +`<span style="flex:1;text-align:center;font-weight:700;color:${PDF_TEAL}">${roas}x</span>`
+            +`</div>`;
+        }).join('');
+        const tRoas=tSp>0?(tRv/tSp).toFixed(2):'0';
+        const hdr=_pdfTableHeader([{t:'المنصة',f:1.4,a:'right'},{t:'الإنفاق'},{t:'الإيرادات'},{t:'الوحدات'},{t:'ROAS'}]);
+        const totalRow=_pdfTableTotal([{t:'الإجمالي',f:1.4,a:'right'},{t:tSp.toLocaleString()},{t:tRv.toLocaleString()},{t:String(tUn)},{t:tRoas+'x'}]);
+        adsHtml=_pdfSectionTitle('عائد الإعلانات')+`<div style="border:1px solid ${PDF_BORDER};border-radius:6px;overflow:hidden;">`+hdr+rows+totalRow+`</div>`;
+      }
     }
+
+    const calculatorBlock = sections.calculator ? `
+      ${_pdfSectionTitle('ملخص المنتج')}
+      <div style="display:flex;gap:8px;margin-bottom:6px;">${kpiHtml}</div>
+      ${_pdfSectionTitle('تفصيل التكاليف')}
+      <div style="border:1px solid ${PDF_BORDER};border-radius:6px;overflow:hidden;">${costHtml}</div>` : '';
 
     const reportHtml = `
       <div style="height:4px;background:${PDF_TEAL};border-radius:2px;margin-bottom:18px;"></div>
@@ -1737,17 +1761,14 @@ function _runPDF(_eb) {
         </div>
         <img src="data:image/png;base64,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" style="width:40px;height:40px;">
       </div>
-      <div style="font-size:15px;font-weight:800;color:${PDF_INK};margin-bottom:14px;">تقرير الأرباح</div>
+      <div style="font-size:15px;font-weight:800;color:${PDF_INK};margin-bottom:14px;">${docTitle}</div>
       <div style="display:flex;justify-content:space-between;background:${PDF_SOFTBG};border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:10px;color:${PDF_MUTED};">
         <div style="flex:1;text-align:right;"><div style="color:${PDF_MUTED};margin-bottom:3px;">المستخدم</div><div style="color:${PDF_INK};font-weight:700;">${txt('userName')||'—'}</div></div>
         <div style="flex:1;text-align:center;"><div style="color:${PDF_MUTED};margin-bottom:3px;">الخطة</div><div style="color:${PDF_INK};font-weight:700;">${txt('planBadge')||'Free'}</div></div>
         <div style="flex:1;text-align:center;"><div style="color:${PDF_MUTED};margin-bottom:3px;">العملة</div><div style="color:${PDF_INK};font-weight:700;">${curSym} (${curCodeLocal})</div></div>
         <div style="flex:1;text-align:left;"><div style="color:${PDF_MUTED};margin-bottom:3px;">التاريخ</div><div style="color:${PDF_INK};font-weight:700;">${date}</div></div>
       </div>
-      ${_pdfSectionTitle('ملخص المنتج')}
-      <div style="display:flex;gap:8px;margin-bottom:6px;">${kpiHtml}</div>
-      ${_pdfSectionTitle('تفصيل التكاليف')}
-      <div style="border:1px solid ${PDF_BORDER};border-radius:6px;overflow:hidden;">${costHtml}</div>
+      ${calculatorBlock}
       ${monthlyHtml}
       ${adsHtml}
       <div style="border-top:1px solid ${PDF_BORDER};margin-top:24px;padding-top:10px;display:flex;justify-content:space-between;font-size:8.5px;color:${PDF_MUTED};">
@@ -1805,7 +1826,7 @@ function _runPDF(_eb) {
             position-=pageH;
             first=false;
           }
-          doc.save('HasibPro-Report.pdf');
+          doc.save(filename);
           _eb.forEach(b=>{b.disabled=false;b.textContent='✅ تم التحميل';});
           setTimeout(()=>_eb.forEach(b=>{b.textContent='تصدير PDF';}),2500);
         })
@@ -1825,6 +1846,7 @@ function _runPDF(_eb) {
     alert('خطأ في PDF: '+err.message);
   }
 }
+
 
 
 // ===== MAIN =====
