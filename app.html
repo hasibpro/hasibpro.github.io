@@ -371,7 +371,7 @@ body.light .feedback-form textarea::placeholder{color:#94a3b8!important;}
  </div>
  <div class="btn-row">
  <button class="btn btn-primary" onclick="exportPDF()" style="display:inline-flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> تصدير PDF</button>
- <button class="btn btn-secondary" onclick="exportMonthlyCSV()" style="display:inline-flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> تصدير CSV</button>
+ <button class="btn btn-secondary" onclick="exportMonthlyExcel()" style="display:inline-flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> تصدير Excel</button>
  </div>
  </div>
 </div>
@@ -389,7 +389,7 @@ body.light .feedback-form textarea::placeholder{color:#94a3b8!important;}
  </table>
  </div>
  <div class="chart-wrap" style="margin-top:12px"><canvas id="adsChart"></canvas></div>
- <div class="btn-row"><button class="btn btn-secondary" onclick="exportAdsCSV()" style="display:inline-flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> تصدير CSV</button></div>
+ <div class="btn-row"><button class="btn btn-secondary" onclick="exportAdsExcel()" style="display:inline-flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> تصدير Excel</button></div>
  </div>
  <div class="card">
  <div class="card-title"><span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-bottom:1px"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span> دليل عائد الإنفاق الإعلاني</div>
@@ -961,20 +961,107 @@ function renderAdsChart(){
 ,datasets:[{label:'الإنفاق',data:adsData.map(a=>a.sp),backgroundColor:'rgba(239,68,68,0.7)',borderRadius:5},{label:'الإيرادات',data:adsData.map(a=>a.rv),backgroundColor:'rgba(16,185,129,0.7)',borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{family:'Cairo'}}}},scales:{x:{ticks:{color:'#94a3b8',font:{family:'Cairo'}},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#94a3b8',font:{family:'Cairo'}},grid:{color:'rgba(255,255,255,0.04)'}}}}});
 }
 
-function exportMonthlyCSV(){
- let csv='﻿'+'الشهر,الوحدات,الإيرادات,التكاليف,الهدف,صافي الربح\n';
- sortedMonthly().forEach(m=>{csv+=`${monthLabel(m)},${m.u},${m.r},${m.c},${m.t||0},${m.r-m.c}\n`;});
- downloadCSV(csv,'hasibpro-monthly.csv');
+// ===== PROFESSIONAL EXCEL EXPORT (replaces plain CSV) =====
+// Plain comma-CSV looked unprofessional on open: Moroccan/Arabic Windows +
+// Excel installs commonly default to ";" as the list separator (French
+// regional format), so a comma-separated file opens as one garbled column
+// instead of a proper table — with zero formatting either way. Fixed by
+// generating a real, styled .xlsx workbook client-side (ExcelJS): correct
+// column separation regardless of locale, bold colored header row, right
+// alignment/width per column, and a highlighted totals row.
+function _loadExcelJS(){
+  if(window.ExcelJS) return Promise.resolve();
+  return _loadScript('https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js');
 }
-function exportAdsCSV(){
- let csv='﻿'+'المنصة,الفترة,الإنفاق,الإيرادات,الوحدات,عائد الإنفاق\n';
- adsData.forEach(a=>{const roas=a.sp>0?(a.rv/a.sp).toFixed(2):0;csv+=`${a.p},${a.note||''},${a.sp},${a.rv},${a.un},${roas}\n`;});
- downloadCSV(csv,'hasibpro-ads.csv');
+async function _downloadExcelWorkbook(workbook,filename){
+  const buffer=await workbook.xlsx.writeBuffer();
+  const blob=new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=filename;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
-function downloadCSV(content,filename){
- const blob=new Blob([content],{type:'text/csv;charset=utf-8;'});
- const url=URL.createObjectURL(blob);
- const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+function _styleExcelHeader(row){
+  row.eachCell(cell=>{
+    cell.font={bold:true,color:{argb:'FFFFFFFF'},size:11};
+    cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF00B894'}};
+    cell.alignment={horizontal:'center',vertical:'middle'};
+  });
+  row.height=20;
+}
+function _styleExcelTotal(row){
+  row.eachCell(cell=>{
+    cell.font={bold:true,color:{argb:'FF0F172A'}};
+    cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFE6FAF5'}};
+    cell.alignment={horizontal:'center',vertical:'middle'};
+  });
+}
+async function exportMonthlyExcel(){
+  const btns=document.querySelectorAll('[onclick="exportMonthlyExcel()"]');
+  btns.forEach(b=>{b.disabled=true;b.textContent='⏳ ...';});
+  try{
+    await _loadExcelJS();
+    const workbook=new ExcelJS.Workbook();
+    workbook.creator='HasibPro'; workbook.created=new Date();
+    const sheet=workbook.addWorksheet('التتبع الشهري',{views:[{rightToLeft:true}]});
+    sheet.columns=[
+      {header:'الشهر',key:'month',width:16},
+      {header:'الوحدات',key:'units',width:12},
+      {header:'الإيرادات',key:'revenue',width:14},
+      {header:'التكاليف',key:'cost',width:14},
+      {header:'الهدف',key:'target',width:12},
+      {header:'صافي الربح',key:'profit',width:14},
+    ];
+    _styleExcelHeader(sheet.getRow(1));
+    let tU=0,tR=0,tC=0,tT=0,tP=0;
+    sortedMonthly().forEach(m=>{
+      const profit=(m.r||0)-(m.c||0);
+      sheet.addRow({month:monthLabel(m),units:m.u||0,revenue:m.r||0,cost:m.c||0,target:m.t||0,profit});
+      tU+=m.u||0;tR+=m.r||0;tC+=m.c||0;tT+=m.t||0;tP+=profit;
+    });
+    _styleExcelTotal(sheet.addRow({month:'الإجمالي',units:tU,revenue:tR,cost:tC,target:tT,profit:tP}));
+    ['revenue','cost','target','profit'].forEach(k=>{sheet.getColumn(k).numFmt='#,##0.00';});
+    await _downloadExcelWorkbook(workbook,'hasibpro-monthly.xlsx');
+  } catch(e){
+    console.error('Excel export error:',e);
+    alert('تعذّر تصدير Excel — حاول مرة أخرى');
+  } finally {
+    btns.forEach(b=>{b.disabled=false;b.textContent='تصدير Excel';});
+  }
+}
+async function exportAdsExcel(){
+  const btns=document.querySelectorAll('[onclick="exportAdsExcel()"]');
+  btns.forEach(b=>{b.disabled=true;b.textContent='⏳ ...';});
+  try{
+    await _loadExcelJS();
+    const workbook=new ExcelJS.Workbook();
+    workbook.creator='HasibPro'; workbook.created=new Date();
+    const sheet=workbook.addWorksheet('عائد الإعلانات',{views:[{rightToLeft:true}]});
+    sheet.columns=[
+      {header:'المنصة',key:'platform',width:20},
+      {header:'الفترة/الحملة',key:'note',width:18},
+      {header:'الإنفاق',key:'spend',width:14},
+      {header:'الإيرادات',key:'revenue',width:14},
+      {header:'الوحدات',key:'units',width:12},
+      {header:'عائد الإنفاق (ROAS)',key:'roas',width:18},
+    ];
+    _styleExcelHeader(sheet.getRow(1));
+    let tSp=0,tRv=0,tUn=0;
+    adsData.forEach(a=>{
+      const roas=a.sp>0?+((a.rv||0)/a.sp).toFixed(2):0;
+      sheet.addRow({platform:a.p||'—',note:a.note||'',spend:a.sp||0,revenue:a.rv||0,units:a.un||0,roas});
+      tSp+=a.sp||0;tRv+=a.rv||0;tUn+=a.un||0;
+    });
+    const tRoas=tSp>0?+(tRv/tSp).toFixed(2):0;
+    _styleExcelTotal(sheet.addRow({platform:'الإجمالي',note:'',spend:tSp,revenue:tRv,units:tUn,roas:tRoas}));
+    ['spend','revenue','roas'].forEach(k=>{sheet.getColumn(k).numFmt='#,##0.00';});
+    await _downloadExcelWorkbook(workbook,'hasibpro-ads.xlsx');
+  } catch(e){
+    console.error('Excel export error:',e);
+    alert('تعذّر تصدير Excel — حاول مرة أخرى');
+  } finally {
+    btns.forEach(b=>{b.disabled=false;b.textContent='تصدير Excel';});
+  }
 }
 
 function calcPricing(){
@@ -1523,14 +1610,37 @@ function _loadScript(src){
   });
 }
 
+// ---- PDF report design system ----
+// Clean, light "invoice" look (white background, teal accent, soft
+// borders) instead of the earlier dark-navy-boxes style the user found
+// unattractive/hard to read. Label-then-value order matches the RTL
+// convention used everywhere else in the app (e.g. the monthly/ads
+// tables render their first column at the right edge in RTL) — the
+// previous version had value-then-label, which read backwards.
+const PDF_INK='#0f172a', PDF_MUTED='#64748b', PDF_BORDER='#e2e8f0',
+      PDF_SOFTBG='#f8fafc', PDF_TEAL='#00b894', PDF_TEALBG='#e6faf5',
+      PDF_RED='#dc2626', PDF_GREEN='#059669';
 function _pdfRow(label,value,alt,valueColor){
-  return `<div style="display:flex;justify-content:space-between;padding:7px 12px;background:${alt?'#0f172a':'#121f36'};font-size:11px;">`
-    +`<span style="font-weight:700;color:${valueColor||'#e8f0fe'}">${value}</span>`
-    +`<span style="color:#64748b">${label}</span>`
+  return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 14px;background:${alt?PDF_SOFTBG:'#ffffff'};font-size:11px;border-bottom:1px solid ${PDF_BORDER};">`
+    +`<span style="color:${PDF_MUTED}">${label}</span>`
+    +`<span style="font-weight:700;color:${valueColor||PDF_INK}">${value}</span>`
     +`</div>`;
 }
 function _pdfSectionTitle(title){
-  return `<div style="background:#0f172a;color:#00d4aa;font-weight:700;font-size:13px;padding:10px 14px;border-radius:6px;margin:18px 0 10px;">${title}</div>`;
+  return `<div style="display:flex;align-items:center;gap:8px;margin:22px 0 10px;">`
+    +`<span style="width:4px;height:16px;background:${PDF_TEAL};border-radius:2px;display:inline-block;"></span>`
+    +`<span style="font-weight:800;font-size:13.5px;color:${PDF_INK};">${title}</span>`
+    +`</div>`;
+}
+function _pdfTableHeader(cols){
+  return `<div style="display:flex;justify-content:space-between;padding:8px 14px;background:${PDF_TEALBG};font-size:9.5px;color:#00695c;font-weight:800;border-radius:6px 6px 0 0;">`
+    +cols.map(c=>`<span style="flex:${c.f||1};text-align:${c.a||'center'};">${c.t}</span>`).join('')
+    +`</div>`;
+}
+function _pdfTableTotal(cols){
+  return `<div style="display:flex;justify-content:space-between;padding:8px 14px;background:${PDF_TEAL};font-size:10.5px;color:#ffffff;font-weight:800;border-radius:0 0 6px 6px;">`
+    +cols.map(c=>`<span style="flex:${c.f||1};text-align:${c.a||'center'};">${c.t}</span>`).join('')
+    +`</div>`;
 }
 
 function _runPDF(_eb) {
@@ -1552,9 +1662,9 @@ function _runPDF(_eb) {
       {l:'صافي الربح',      v:txt('r-profit')+' '+curSym, neg:(txt('r-profit')||'').includes('-')},
       {l:'هامش الربح',      v:txt('r-margin'), neg:false},
     ];
-    const kpiHtml=kpis.map(k=>`<div style="flex:1;background:#121f36;border:1px solid #1a2942;border-radius:8px;padding:10px 8px;text-align:center;">`
-      +`<div style="font-size:9.5px;color:#8fa3c0;margin-bottom:5px;">${k.l}</div>`
-      +`<div style="font-size:14px;font-weight:800;color:${k.neg?'#ef4444':'#00d4aa'}">${k.v}</div>`
+    const kpiHtml=kpis.map(k=>`<div style="flex:1;background:#ffffff;border:1px solid ${PDF_BORDER};border-top:3px solid ${k.neg?PDF_RED:PDF_TEAL};border-radius:6px;padding:12px 8px;text-align:center;">`
+      +`<div style="font-size:9px;color:${PDF_MUTED};margin-bottom:6px;letter-spacing:0.3px;">${k.l}</div>`
+      +`<div style="font-size:15px;font-weight:800;color:${k.neg?PDF_RED:PDF_INK}">${k.v}</div>`
       +`</div>`).join('');
 
     // ---- Cost breakdown ----
@@ -1581,20 +1691,18 @@ function _runPDF(_eb) {
       const rows=mData.map((m,i)=>{
         const p=(m.r||0)-(m.c||0); tR+=m.r||0; tC+=m.c||0; tU+=m.u||0;
         const label=(typeof monthLabel==='function'?monthLabel(m):((MONTHS[m.m]||'—')+' '+(m.y||'')));
-        return `<div style="display:flex;justify-content:space-between;padding:6px 10px;background:${i%2===0?'#121f36':'#0f172a'};font-size:10px;">`
-          +`<span style="flex:1.3;font-weight:700">${label}</span>`
-          +`<span style="flex:1;text-align:center">${m.u||0}</span>`
-          +`<span style="flex:1;text-align:center">${(m.r||0).toLocaleString()}</span>`
-          +`<span style="flex:1;text-align:center">${(m.c||0).toLocaleString()}</span>`
-          +`<span style="flex:1;text-align:center;font-weight:700;color:${p>=0?'#10b981':'#ef4444'}">${p.toLocaleString()}</span>`
+        return `<div style="display:flex;justify-content:space-between;padding:7px 14px;background:${i%2===0?'#ffffff':PDF_SOFTBG};font-size:10px;border-bottom:1px solid ${PDF_BORDER};">`
+          +`<span style="flex:1.3;font-weight:700;color:${PDF_INK}">${label}</span>`
+          +`<span style="flex:1;text-align:center;color:${PDF_MUTED}">${m.u||0}</span>`
+          +`<span style="flex:1;text-align:center;color:${PDF_MUTED}">${(m.r||0).toLocaleString()}</span>`
+          +`<span style="flex:1;text-align:center;color:${PDF_MUTED}">${(m.c||0).toLocaleString()}</span>`
+          +`<span style="flex:1;text-align:center;font-weight:700;color:${p>=0?PDF_GREEN:PDF_RED}">${p.toLocaleString()}</span>`
           +`</div>`;
       }).join('');
       const tp=tR-tC;
-      const hdr=`<div style="display:flex;justify-content:space-between;padding:7px 10px;background:#0f172a;font-size:9.5px;color:#00d4aa;font-weight:700;">`
-        +`<span style="flex:1.3">الشهر</span><span style="flex:1;text-align:center">الوحدات</span><span style="flex:1;text-align:center">الإيرادات</span><span style="flex:1;text-align:center">التكاليف</span><span style="flex:1;text-align:center">صافي الربح</span></div>`;
-      const totalRow=`<div style="display:flex;justify-content:space-between;padding:7px 10px;background:#003b2a;font-size:10px;font-weight:700;color:#00d4aa;">`
-        +`<span style="flex:1.3">الإجمالي</span><span style="flex:1;text-align:center">${tU}</span><span style="flex:1;text-align:center">${tR.toLocaleString()}</span><span style="flex:1;text-align:center">${tC.toLocaleString()}</span><span style="flex:1;text-align:center">${tp.toLocaleString()}</span></div>`;
-      monthlyHtml=_pdfSectionTitle('التتبع الشهري')+`<div style="border-radius:6px;overflow:hidden;">`+hdr+rows+totalRow+`</div>`;
+      const hdr=_pdfTableHeader([{t:'الشهر',f:1.3,a:'right'},{t:'الوحدات'},{t:'الإيرادات'},{t:'التكاليف'},{t:'صافي الربح'}]);
+      const totalRow=_pdfTableTotal([{t:'الإجمالي',f:1.3,a:'right'},{t:String(tU)},{t:tR.toLocaleString()},{t:tC.toLocaleString()},{t:tp.toLocaleString()}]);
+      monthlyHtml=_pdfSectionTitle('التتبع الشهري')+`<div style="border:1px solid ${PDF_BORDER};border-radius:6px;overflow:hidden;">`+hdr+rows+totalRow+`</div>`;
     }
 
     // ---- Ads / ROAS (real dynamic data) ----
@@ -1606,43 +1714,43 @@ function _runPDF(_eb) {
         const roas=a.sp>0?(a.rv/a.sp).toFixed(2):'0';
         tSp+=a.sp||0;tRv+=a.rv||0;tUn+=a.un||0;
         const label=a.p+(a.note?(' - '+a.note):'');
-        return `<div style="display:flex;justify-content:space-between;padding:6px 10px;background:${i%2===0?'#121f36':'#0f172a'};font-size:10px;">`
-          +`<span style="flex:1.4;font-weight:700">${label}</span>`
-          +`<span style="flex:1;text-align:center">${(a.sp||0).toLocaleString()}</span>`
-          +`<span style="flex:1;text-align:center">${(a.rv||0).toLocaleString()}</span>`
-          +`<span style="flex:1;text-align:center">${a.un||0}</span>`
-          +`<span style="flex:1;text-align:center;font-weight:700;color:#00d4aa">${roas}x</span>`
+        return `<div style="display:flex;justify-content:space-between;padding:7px 14px;background:${i%2===0?'#ffffff':PDF_SOFTBG};font-size:10px;border-bottom:1px solid ${PDF_BORDER};">`
+          +`<span style="flex:1.4;font-weight:700;color:${PDF_INK}">${label}</span>`
+          +`<span style="flex:1;text-align:center;color:${PDF_MUTED}">${(a.sp||0).toLocaleString()}</span>`
+          +`<span style="flex:1;text-align:center;color:${PDF_MUTED}">${(a.rv||0).toLocaleString()}</span>`
+          +`<span style="flex:1;text-align:center;color:${PDF_MUTED}">${a.un||0}</span>`
+          +`<span style="flex:1;text-align:center;font-weight:700;color:${PDF_TEAL}">${roas}x</span>`
           +`</div>`;
       }).join('');
       const tRoas=tSp>0?(tRv/tSp).toFixed(2):'0';
-      const hdr=`<div style="display:flex;justify-content:space-between;padding:7px 10px;background:#0f172a;font-size:9.5px;color:#00d4aa;font-weight:700;">`
-        +`<span style="flex:1.4">المنصة</span><span style="flex:1;text-align:center">الإنفاق</span><span style="flex:1;text-align:center">الإيرادات</span><span style="flex:1;text-align:center">الوحدات</span><span style="flex:1;text-align:center">ROAS</span></div>`;
-      const totalRow=`<div style="display:flex;justify-content:space-between;padding:7px 10px;background:#003b2a;font-size:10px;font-weight:700;color:#00d4aa;">`
-        +`<span style="flex:1.4">الإجمالي</span><span style="flex:1;text-align:center">${tSp.toLocaleString()}</span><span style="flex:1;text-align:center">${tRv.toLocaleString()}</span><span style="flex:1;text-align:center">${tUn}</span><span style="flex:1;text-align:center">${tRoas}x</span></div>`;
-      adsHtml=_pdfSectionTitle('عائد الإعلانات')+`<div style="border-radius:6px;overflow:hidden;">`+hdr+rows+totalRow+`</div>`;
+      const hdr=_pdfTableHeader([{t:'المنصة',f:1.4,a:'right'},{t:'الإنفاق'},{t:'الإيرادات'},{t:'الوحدات'},{t:'ROAS'}]);
+      const totalRow=_pdfTableTotal([{t:'الإجمالي',f:1.4,a:'right'},{t:tSp.toLocaleString()},{t:tRv.toLocaleString()},{t:String(tUn)},{t:tRoas+'x'}]);
+      adsHtml=_pdfSectionTitle('عائد الإعلانات')+`<div style="border:1px solid ${PDF_BORDER};border-radius:6px;overflow:hidden;">`+hdr+rows+totalRow+`</div>`;
     }
 
     const reportHtml = `
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #00d4aa;padding-bottom:14px;margin-bottom:14px;">
-        <img src="data:image/png;base64,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" style="width:44px;height:44px;">
+      <div style="height:4px;background:${PDF_TEAL};border-radius:2px;margin-bottom:18px;"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid ${PDF_BORDER};">
         <div style="text-align:left;">
-          <div style="font-size:24px;font-weight:900;color:#00d4aa;">HasibPro</div>
-          <div style="font-size:10px;color:#64748b;">E-Commerce Profit Calculator</div>
+          <div style="font-size:22px;font-weight:900;color:${PDF_INK};">HasibPro</div>
+          <div style="font-size:9.5px;color:${PDF_MUTED};">E-Commerce Profit Calculator</div>
         </div>
+        <img src="data:image/png;base64,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" style="width:40px;height:40px;">
       </div>
-      <div style="display:flex;justify-content:space-between;font-size:10.5px;color:#475569;margin-bottom:4px;">
-        <span>الخطة: ${txt('planBadge')||'Free'}</span><span>المستخدم: ${txt('userName')||'—'}</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;font-size:10.5px;color:#475569;margin-bottom:18px;">
-        <span>العملة: ${curSym} (${curCodeLocal})</span><span>التاريخ: ${date}</span>
+      <div style="font-size:15px;font-weight:800;color:${PDF_INK};margin-bottom:14px;">تقرير الأرباح</div>
+      <div style="display:flex;justify-content:space-between;background:${PDF_SOFTBG};border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:10px;color:${PDF_MUTED};">
+        <div style="flex:1;text-align:right;"><div style="color:${PDF_MUTED};margin-bottom:3px;">المستخدم</div><div style="color:${PDF_INK};font-weight:700;">${txt('userName')||'—'}</div></div>
+        <div style="flex:1;text-align:center;"><div style="color:${PDF_MUTED};margin-bottom:3px;">الخطة</div><div style="color:${PDF_INK};font-weight:700;">${txt('planBadge')||'Free'}</div></div>
+        <div style="flex:1;text-align:center;"><div style="color:${PDF_MUTED};margin-bottom:3px;">العملة</div><div style="color:${PDF_INK};font-weight:700;">${curSym} (${curCodeLocal})</div></div>
+        <div style="flex:1;text-align:left;"><div style="color:${PDF_MUTED};margin-bottom:3px;">التاريخ</div><div style="color:${PDF_INK};font-weight:700;">${date}</div></div>
       </div>
       ${_pdfSectionTitle('ملخص المنتج')}
-      <div style="display:flex;gap:6px;margin-bottom:6px;">${kpiHtml}</div>
+      <div style="display:flex;gap:8px;margin-bottom:6px;">${kpiHtml}</div>
       ${_pdfSectionTitle('تفصيل التكاليف')}
-      <div style="border-radius:6px;overflow:hidden;">${costHtml}</div>
+      <div style="border:1px solid ${PDF_BORDER};border-radius:6px;overflow:hidden;">${costHtml}</div>
       ${monthlyHtml}
       ${adsHtml}
-      <div style="border-top:1px solid #cbd5e1;margin-top:22px;padding-top:8px;display:flex;justify-content:space-between;font-size:8.5px;color:#94a3b8;">
+      <div style="border-top:1px solid ${PDF_BORDER};margin-top:24px;padding-top:10px;display:flex;justify-content:space-between;font-size:8.5px;color:${PDF_MUTED};">
         <span>HasibPro — أداة مالية ذكية للتجارة الإلكترونية</span><span>hasibpro.com</span>
       </div>`;
 
@@ -1655,21 +1763,25 @@ function _runPDF(_eb) {
     // pattern for long HTML-to-PDF exports (small trade-off: a table row
     // may rarely be visually split across a page break, but it never
     // produces a blank page).
+    //
+    // Positioning history (do not "simplify" this without re-testing both
+    // bugs it fixes):
+    //  1) `opacity:0.01` was tried to hide the report from the user during
+    //     capture — html2canvas renders the ACTUAL computed opacity, so a
+    //     ~1% opaque container composited onto a white background comes out
+    //     nearly pure white (blank-looking PDF), even though rendering
+    //     "succeeds" with zero JS errors. Removed.
+    //  2) `left:0; z-index:-9999` (no opacity) was tried next to keep it
+    //     both fully opaque AND invisible — but z-index only affects paint
+    //     order among siblings in the live page; it does not reliably keep
+    //     an element out of view in every stacking-context situation, and
+    //     it caused a real, visible flash in the top-left corner during
+    //     capture. Fixed by moving it off-screen instead (large negative
+    //     offset) — fully opaque (correct html2canvas capture) AND outside
+    //     the viewport (no visible flash), which is the standard technique.
     const container=document.createElement('div');
     container.id='pdfReportContainer';
-    // Positioned at top-left and pushed behind everything (z-index) rather
-    // than off-screen with an extreme negative offset — extreme offsets are
-    // a known cause of html2canvas capturing a blank/empty canvas.
-    // NOTE: an earlier version added `opacity:0.01` here to make the report
-    // invisible to the user during capture. That was the actual cause of
-    // "PDF downloads with blank pages" reported after the previous fix:
-    // html2canvas renders the ACTUAL computed opacity, so a container at 1%
-    // opacity composited onto the white html2canvas backgroundColor comes
-    // out as a nearly pure white (blank-looking) image — the render
-    // "succeeds" with zero errors, it just captures almost nothing.
-    // Fixed: no opacity reduction. Keeping the user from seeing it relies
-    // only on z-index (rendered behind the real page content), not opacity.
-    container.style.cssText='position:fixed;top:0;left:0;width:780px;z-index:-9999;pointer-events:none;background:#ffffff;font-family:Cairo,sans-serif;direction:rtl;color:#1e293b;padding:28px 32px;';
+    container.style.cssText='position:fixed;top:0;left:-10000px;width:780px;pointer-events:none;background:#ffffff;font-family:Cairo,sans-serif;direction:rtl;color:#1e293b;padding:28px 32px;';
     container.innerHTML=reportHtml;
     document.body.appendChild(container);
 
