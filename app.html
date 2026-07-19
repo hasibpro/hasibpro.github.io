@@ -320,6 +320,7 @@ body.light .feedback-form textarea::placeholder{color:#94a3b8!important;}
  <div class="chart-wrap" style="height:160px"><canvas id="costChart"></canvas></div>
  <div class="btn-row">
  <button class="btn btn-primary" onclick="exportCalculatorPDF()" style="display:inline-flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> تصدير PDF</button>
+ <button class="btn btn-secondary" onclick="exportCalculatorExcel()" style="display:inline-flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> تصدير Excel</button>
  <button class="btn btn-secondary" onclick="addToCompare()" style="display:inline-flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> أضف للمقارنة</button>
  </div>
  </div>
@@ -981,118 +982,191 @@ async function _downloadExcelWorkbook(workbook,filename){
   document.body.appendChild(a);a.click();document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
-const _EXCEL_BORDER={
-  top:{style:'thin',color:{argb:'FFE2E8F0'}}, left:{style:'thin',color:{argb:'FFE2E8F0'}},
-  bottom:{style:'thin',color:{argb:'FFE2E8F0'}}, right:{style:'thin',color:{argb:'FFE2E8F0'}}
-};
-function _styleExcelHeader(row){
-  row.eachCell(cell=>{
-    cell.font={bold:true,color:{argb:'FFFFFFFF'},size:11};
-    cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF00B894'}};
-    cell.alignment={horizontal:'center',vertical:'middle'};
-    cell.border=_EXCEL_BORDER;
-  });
-  row.height=22;
+// ===== EXCEL "PRINTED REPORT" LAYOUT ENGINE =====
+// The Excel exports used to be a plain styled table. The user wants them to
+// look and feel identical to the PDF reports below (_generatePDFReport /
+// _pdfRow / _pdfSectionTitle / etc) — same header, same brand colors, same
+// meta box, same section order, same footer — not just "nicer", but a
+// deliberate mirror of that design, built as a real page layout inside the
+// worksheet (merged-cell bands) rather than a conventional data table.
+// PDF_* design tokens are reused everywhere below via 'FF'+hex-without-#.
+const XL_INK='FF0F172A', XL_MUTED='FF64748B', XL_BORDER='FFE2E8F0',
+      XL_SOFTBG='FFF8FAFC', XL_TEAL='FF00B894', XL_RED='FFDC2626',
+      XL_GREEN='FF059669', XL_BRAND='FF00D4AA', XL_WHITE='FFFFFFFF';
+
+// Divides `numCols` into `parts` contiguous, roughly-even column ranges —
+// used to lay out the 4-up meta box / KPI cards / 2-up footer, independent
+// of however many real data columns a given report needs.
+function _splitCols(numCols,parts){
+  const base=Math.floor(numCols/parts); let rem=numCols-base*parts; let cur=1; const out=[];
+  for(let i=0;i<parts;i++){ let size=base+(i<rem?1:0); if(size<1) size=1; out.push([cur,Math.min(numCols,cur+size-1)]); cur+=size; }
+  return out;
 }
-function _styleExcelTotal(row){
-  row.eachCell(cell=>{
-    cell.font={bold:true,color:{argb:'FF0F172A'}};
-    cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFE6FAF5'}};
-    cell.alignment={horizontal:'center',vertical:'middle'};
-    cell.border=_EXCEL_BORDER;
+// The PDF's `<div style="height:4px;background:${PDF_TEAL}">` top accent bar.
+function _xlAccentBar(sheet,row,numCols){
+  const r=sheet.getRow(row); r.height=5;
+  for(let c=1;c<=numCols;c++) sheet.getCell(row,c).fill={type:'pattern',pattern:'solid',fgColor:{argb:XL_TEAL}};
+  return row+1;
+}
+// The PDF header: "HasibPro" (brand teal) + subtitle stacked in one block on
+// one side (built with ExcelJS Rich Text so both font sizes/colors live in a
+// single cell, exactly like the PDF's one <div>), logo image on the other.
+function _xlHeaderBand(workbook,sheet,row,numCols){
+  const r=sheet.getRow(row); r.height=50;
+  const titleSpan=Math.max(1,numCols-2);
+  sheet.mergeCells(row,1,row,titleSpan);
+  const titleCell=sheet.getCell(row,1);
+  titleCell.value={richText:[
+    {font:{bold:true,size:16,color:{argb:XL_BRAND}},text:'HasibPro\n'},
+    {font:{size:8,color:{argb:XL_MUTED}},text:'E-Commerce Profit Calculator'}
+  ]};
+  titleCell.alignment={horizontal:'right',vertical:'middle',wrapText:true};
+  sheet.mergeCells(row,titleSpan+1,row,numCols);
+  try{
+    const imgId=workbook.addImage({base64:HASIBPRO_LOGO_URI.split(',')[1],extension:'png'});
+    sheet.addImage(imgId,{tl:{col:titleSpan+0.15,row:(row-1)+0.08},ext:{width:46,height:46}});
+  } catch(e){ console.error('HasibPro logo embed failed:',e); }
+  for(let c=1;c<=numCols;c++) sheet.getCell(row,c).border={bottom:{style:'thin',color:{argb:XL_BORDER}}};
+  return row+1;
+}
+// The PDF's bold document title line (e.g. "تقرير التتبع الشهري").
+function _xlReportTitle(sheet,row,numCols,title){
+  const r=sheet.getRow(row); r.height=22;
+  sheet.mergeCells(row,1,row,numCols);
+  const cell=sheet.getCell(row,1);
+  cell.value=title; cell.font={bold:true,size:13,color:{argb:XL_INK}};
+  cell.alignment={horizontal:'right',vertical:'middle'};
+  return row+1;
+}
+// The PDF's soft-gray meta box: المستخدم / الخطة / العملة / التاريخ, each a
+// muted label over a bold value, spread across 2 physical rows.
+function _xlMetaBox(sheet,row,numCols,meta){
+  const labelRow=sheet.getRow(row), valueRow=sheet.getRow(row+1);
+  labelRow.height=14; valueRow.height=16;
+  const bounds=_splitCols(numCols,4);
+  meta.forEach((m,i)=>{
+    const [s,e]=bounds[i];
+    sheet.mergeCells(row,s,row,e); sheet.mergeCells(row+1,s,row+1,e);
+    const lc=sheet.getCell(row,s); lc.value=m.label; lc.font={size:8,color:{argb:XL_MUTED}}; lc.alignment={horizontal:m.align,vertical:'middle'};
+    const vc=sheet.getCell(row+1,s); vc.value=m.value; vc.font={bold:true,size:10,color:{argb:XL_INK}}; vc.alignment={horizontal:m.align,vertical:'middle'};
+  });
+  for(let r2=row;r2<=row+1;r2++) for(let c=1;c<=numCols;c++) sheet.getCell(r2,c).fill={type:'pattern',pattern:'solid',fgColor:{argb:XL_SOFTBG}};
+  return row+2;
+}
+// The PDF's `_pdfSectionTitle`: bold text with a small teal accent rule.
+function _xlSectionTitle(sheet,row,numCols,title){
+  const r=sheet.getRow(row); r.height=18;
+  sheet.mergeCells(row,1,row,numCols);
+  const cell=sheet.getCell(row,1);
+  cell.value=title; cell.font={bold:true,size:11,color:{argb:XL_INK}};
+  cell.alignment={horizontal:'right',vertical:'middle',indent:1};
+  sheet.getCell(row,1).border={right:{style:'thick',color:{argb:XL_TEAL}}};
+  return row+1;
+}
+// The PDF's KPI cards (Cost Calculator report only): 4 bordered boxes, teal
+// (or red, if `neg`) top accent, muted label over a bold value.
+function _xlKpiCards(sheet,row,numCols,kpis){
+  const labelRow=sheet.getRow(row), valueRow=sheet.getRow(row+1);
+  labelRow.height=16; valueRow.height=24;
+  const bounds=_splitCols(numCols,4);
+  kpis.forEach((k,i)=>{
+    const [s,e]=bounds[i];
+    sheet.mergeCells(row,s,row,e); sheet.mergeCells(row+1,s,row+1,e);
+    const lc=sheet.getCell(row,s); lc.value=k.l; lc.font={size:8,color:{argb:XL_MUTED}}; lc.alignment={horizontal:'center',vertical:'middle'};
+    const vc=sheet.getCell(row+1,s); vc.value=k.v; vc.font={bold:true,size:13,color:{argb:k.neg?XL_RED:XL_INK}}; vc.alignment={horizontal:'center',vertical:'middle'};
+    const topColor=k.neg?XL_RED:XL_TEAL;
+    for(let c=s;c<=e;c++){
+      sheet.getCell(row,c).border={top:{style:'medium',color:{argb:topColor}},left:{style:'thin',color:{argb:XL_BORDER}},right:{style:'thin',color:{argb:XL_BORDER}}};
+      sheet.getCell(row+1,c).border={left:{style:'thin',color:{argb:XL_BORDER}},right:{style:'thin',color:{argb:XL_BORDER}},bottom:{style:'thin',color:{argb:XL_BORDER}}};
+    }
+  });
+  return row+2;
+}
+// The PDF's `_pdfRow` label:value list (Cost Calculator's "تفصيل التكاليف"):
+// muted label on one side, bold value on the other, alternating row tint.
+function _xlKeyValueTable(sheet,row,numCols,rows){
+  const labelCols=Math.max(1,Math.round(numCols/2));
+  rows.forEach(([label,value],i)=>{
+    const r=row+i; const rr=sheet.getRow(r); rr.height=16;
+    sheet.mergeCells(r,1,r,labelCols); sheet.mergeCells(r,labelCols+1,r,numCols);
+    const lc=sheet.getCell(r,1); lc.value=label; lc.font={size:9,color:{argb:XL_MUTED}}; lc.alignment={horizontal:'right',vertical:'middle',indent:1};
+    const vc=sheet.getCell(r,labelCols+1); vc.value=value; vc.font={bold:true,size:9,color:{argb:XL_INK}}; vc.alignment={horizontal:'left',vertical:'middle',indent:1};
+    const bg=i%2===0?XL_WHITE:XL_SOFTBG;
+    for(let c=1;c<=numCols;c++){
+      sheet.getCell(r,c).fill={type:'pattern',pattern:'solid',fgColor:{argb:bg}};
+      sheet.getCell(r,c).border={bottom:{style:'thin',color:{argb:XL_BORDER}}};
+    }
+  });
+  return row+rows.length;
+}
+// The PDF's teal data-table header row (`_pdfTableHeader`).
+function _styleExcelHeader(row,firstColRight){
+  row.eachCell((cell,colNum)=>{
+    cell.font={bold:true,color:{argb:XL_WHITE},size:10};
+    cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:XL_TEAL}};
+    cell.alignment={horizontal:(firstColRight&&colNum===1)?'right':'center',vertical:'middle',indent:(firstColRight&&colNum===1)?1:0};
+    cell.border={top:{style:'thin',color:{argb:XL_TEAL}},bottom:{style:'thin',color:{argb:XL_TEAL}}};
   });
   row.height=20;
 }
-// Thin bordered + centered styling for ordinary data rows, with optional
-// light zebra striping so long tables stay readable.
-function _styleExcelDataRow(row,alt){
-  row.eachCell(cell=>{
-    cell.alignment={horizontal:'center',vertical:'middle'};
-    cell.border=_EXCEL_BORDER;
-    if(alt) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF8FAFC'}};
+// The PDF's solid-teal totals row (`_pdfTableTotal`).
+function _styleExcelTotal(row,firstColRight){
+  row.eachCell((cell,colNum)=>{
+    cell.font={bold:true,color:{argb:XL_WHITE},size:10};
+    cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:XL_TEAL}};
+    cell.alignment={horizontal:(firstColRight&&colNum===1)?'right':'center',vertical:'middle',indent:(firstColRight&&colNum===1)?1:0};
   });
-  row.height=18;
+  row.height=20;
 }
-// Adds a HasibPro logo + brand-color title banner above the data table, so
-// exported spreadsheets carry the same branding as the PDF reports. The
-// banner fills the full row width (not just the merged text) and gets a
-// teal accent rule along its bottom edge, matching the PDF header's look —
-// this avoids the "tiny text floating in a blank sheet" appearance.
-function _addExcelBranding(workbook,sheet,numCols){
-  sheet.spliceRows(1,0,['']);
-  const brandRow=sheet.getRow(1);
-  brandRow.height=48;
-  const titleSpan=Math.max(1,numCols-1);
-  sheet.mergeCells(1,1,1,titleSpan);
-  const titleCell=sheet.getCell(1,1);
-  titleCell.value='HasibPro';
-  titleCell.font={bold:true,size:20,color:{argb:'FF00D4AA'}};
-  titleCell.alignment={horizontal:'center',vertical:'middle'};
-  for(let c=1;c<=numCols;c++){
-    const cell=sheet.getCell(1,c);
-    cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFE6FAF5'}};
-    cell.border={bottom:{style:'medium',color:{argb:'FF00D4AA'}}};
-  }
-  try{
-    const imgId=workbook.addImage({base64:HASIBPRO_LOGO_URI.split(',')[1],extension:'png'});
-    sheet.addImage(imgId,{tl:{col:numCols-1,row:0.08},ext:{width:44,height:44}});
-  } catch(e){ console.error('HasibPro logo embed failed:',e); }
+// Thin bordered + centered data row, with optional zebra striping (mirrors
+// the PDF's alternating white/soft-gray table rows).
+function _styleExcelDataRow(row,alt,firstColRight){
+  row.eachCell((cell,colNum)=>{
+    cell.alignment={horizontal:(firstColRight&&colNum===1)?'right':'center',vertical:'middle',indent:(firstColRight&&colNum===1)?1:0};
+    cell.border={bottom:{style:'thin',color:{argb:XL_BORDER}}};
+    if(alt) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:XL_SOFTBG}};
+  });
+  row.height=17;
 }
-// Report title + export date/time meta row, inserted right under the brand
-// banner (row 2) — gives every export a clear, large title plus a visible
-// timestamp, matching the PDF report's meta box treatment. Returns the
-// formatted date/time string so callers can reuse it in the print footer.
-function _addReportMeta(sheet,numCols,reportTitle){
-  sheet.spliceRows(2,0,['']);
-  const metaRow=sheet.getRow(2);
-  metaRow.height=24;
-  const half=Math.max(1,Math.ceil(numCols/2));
-  sheet.mergeCells(2,1,2,half);
-  const titleCell=sheet.getCell(2,1);
-  titleCell.value=reportTitle;
-  titleCell.font={bold:true,size:13,color:{argb:'FF0F172A'}};
-  titleCell.alignment={horizontal:'center',vertical:'middle'};
-  sheet.mergeCells(2,half+1,2,numCols);
-  const dateCell=sheet.getCell(2,half+1);
-  const now=new Date();
-  const dateStr=now.toLocaleDateString('ar-MA',{year:'numeric',month:'long',day:'numeric'});
-  const timeStr=now.toLocaleTimeString('ar-MA',{hour:'2-digit',minute:'2-digit'});
-  dateCell.value=`تاريخ التصدير: ${dateStr} — ${timeStr}`;
-  dateCell.font={italic:true,size:9,color:{argb:'FF64748B'}};
-  dateCell.alignment={horizontal:'center',vertical:'middle'};
-  for(let c=1;c<=numCols;c++){
-    sheet.getCell(2,c).border={bottom:{style:'thin',color:{argb:'FFE2E8F0'}}};
-  }
-  return `${dateStr} ${timeStr}`;
+// The PDF's footer: tagline on one side, "hasibpro.com" on the other, thin
+// top divider.
+function _xlFooter(sheet,row,numCols){
+  const r=sheet.getRow(row); r.height=14;
+  const bounds=_splitCols(numCols,2);
+  sheet.mergeCells(row,bounds[0][0],row,bounds[0][1]);
+  const rightCell=sheet.getCell(row,bounds[0][0]);
+  rightCell.value='HasibPro — أداة مالية ذكية للتجارة الإلكترونية';
+  rightCell.font={size:7,color:{argb:XL_MUTED}}; rightCell.alignment={horizontal:'right',vertical:'middle'};
+  sheet.mergeCells(row,bounds[1][0],row,bounds[1][1]);
+  const leftCell=sheet.getCell(row,bounds[1][0]);
+  leftCell.value='hasibpro.com';
+  leftCell.font={size:7,color:{argb:XL_MUTED}}; leftCell.alignment={horizontal:'left',vertical:'middle'};
+  for(let c=1;c<=numCols;c++) sheet.getCell(row,c).border={top:{style:'thin',color:{argb:XL_BORDER}}};
+  return row+1;
 }
-// Recomputes column widths from the actual header/data/total content so
-// nothing looks arbitrarily wide or clipped — a real "auto-fit columns".
-function _autoFitColumns(sheet,numCols,headerRowNum,lastRow){
+// Recomputes column widths from actual header/data/total content in the
+// given row range — a real "auto-fit", not a guessed static width.
+function _autoFitColumns(sheet,numCols,fromRow,toRow){
   for(let c=1;c<=numCols;c++){
     let maxLen=8;
-    for(let r=headerRowNum;r<=lastRow;r++){
+    for(let r=fromRow;r<=toRow;r++){
       const v=sheet.getCell(r,c).value;
-      if(v==null) continue;
+      if(v==null||typeof v==='object') continue;
       const s=typeof v==='number'?v.toLocaleString('en-US',{maximumFractionDigits:2}):String(v);
       if(s.length>maxLen) maxLen=s.length;
     }
-    sheet.getColumn(c).width=Math.min(32,Math.max(10,maxLen+4));
+    sheet.getColumn(c).width=Math.min(30,Math.max(9,maxLen+3));
   }
 }
-// Confines the printable/visible area to the actual report (no runaway blank
-// columns), scales to one page wide, and centers it — so opening or printing
-// the file shows a tidy, self-contained document instead of a table adrift
-// in a sea of empty spreadsheet cells. Also adds a repeating title band for
-// multi-page printouts, a branded print header/footer with page numbers, and
-// an AutoFilter on the header row — the "professional report" finishing
-// touches, on top of what was already there in the previous revision.
+// Page setup + print header/footer + repeating title band + AutoFilter, so
+// the workbook opens AND prints like a finished, paginated report.
 function _finalizeExcelSheet(sheet,numCols,opts){
   const lastCol=sheet.getColumn(numCols).letter;
   const lastRow=sheet.rowCount;
   sheet.pageSetup.paperSize=9; // A4
   sheet.pageSetup.orientation='portrait';
   sheet.pageSetup.printArea=`A1:${lastCol}${lastRow}`;
-  sheet.pageSetup.printTitlesRow='1:3';
+  if(opts&&opts.titleRows) sheet.pageSetup.printTitlesRow=opts.titleRows;
   sheet.pageSetup.fitToPage=true;
   sheet.pageSetup.fitToWidth=1;
   sheet.pageSetup.fitToHeight=0;
@@ -1102,8 +1176,89 @@ function _finalizeExcelSheet(sheet,numCols,opts){
     oddHeader:'&C&B&14HasibPro',
     oddFooter:'&L&8HasibPro — نظام إدارة الأرباح&C&8صفحة &P من &N&R&8'+((opts&&opts.dateStr)||'')
   };
-  if(opts&&opts.filterToRow){
-    sheet.autoFilter={from:{row:3,column:1},to:{row:opts.filterToRow,column:numCols}};
+  if(opts&&opts.filterRange){
+    sheet.autoFilter={from:{row:opts.filterRange.from,column:1},to:{row:opts.filterRange.to,column:numCols}};
+  }
+}
+// Shared header block: accent bar + brand header + gap + report title +
+// meta box, identical across every report type. Returns the next free row.
+function _xlReportHeader(workbook,sheet,numCols,docTitle){
+  const get=id=>document.getElementById(id);
+  const txt=id=>get(id)?.textContent||'0';
+  const curCodeLocal=window.curCode||'MAD';
+  const curSym=(window.CURRENCIES||{})[curCodeLocal]?.sym||'درهم';
+  const dateStr=new Date().toLocaleDateString('ar-MA',{year:'numeric',month:'long',day:'numeric'});
+  let row=1;
+  row=_xlAccentBar(sheet,row,numCols);
+  row=_xlHeaderBand(workbook,sheet,row,numCols);
+  row++;
+  row=_xlReportTitle(sheet,row,numCols,docTitle);
+  row=_xlMetaBox(sheet,row,numCols,[
+    {label:'المستخدم',value:txt('userName')||'—',align:'right'},
+    {label:'الخطة',value:txt('planBadge')||'Free',align:'center'},
+    {label:'العملة',value:`${curSym} (${curCodeLocal})`,align:'center'},
+    {label:'التاريخ',value:dateStr,align:'left'},
+  ]);
+  row++;
+  return {row,dateStr};
+}
+async function exportCalculatorExcel(){
+  const btns=document.querySelectorAll('[onclick="exportCalculatorExcel()"]');
+  btns.forEach(b=>{b.disabled=true;b.textContent='⏳ ...';});
+  try{
+    await _loadExcelJS();
+    const workbook=new ExcelJS.Workbook();
+    workbook.creator='HasibPro'; workbook.created=new Date();
+    const numCols=8;
+    const sheet=workbook.addWorksheet('حاسبة التكلفة',{views:[{rightToLeft:true,showGridLines:false}]});
+    sheet.columns=Array.from({length:numCols},()=>({width:10}));
+
+    const get=id=>document.getElementById(id);
+    const txt=id=>get(id)?.textContent||'0';
+    const val=id=>get(id)?.value||'0';
+    const curCodeLocal=window.curCode||'MAD';
+    const curSym=(window.CURRENCIES||{})[curCodeLocal]?.sym||'درهم';
+    const platEl=get('platform');
+    const platform=platEl?.options[platEl?.selectedIndex]?.text||'—';
+
+    const {row:afterHeaderRow,dateStr}=_xlReportHeader(workbook,sheet,numCols,'تقرير حاسبة التكلفة');
+    let row=afterHeaderRow;
+    row=_xlSectionTitle(sheet,row,numCols,'ملخص المنتج');
+    const kpis=[
+      {l:'سعر البيع',v:val('salePrice')+' '+curSym,neg:false},
+      {l:'إجمالي التكاليف',v:txt('r-total')+' '+curSym,neg:false},
+      {l:'صافي الربح',v:txt('r-profit')+' '+curSym,neg:(txt('r-profit')||'').includes('-')},
+      {l:'هامش الربح',v:txt('r-margin'),neg:false},
+    ];
+    row=_xlKpiCards(sheet,row,numCols,kpis);
+    row++;
+    row=_xlSectionTitle(sheet,row,numCols,'تفصيل التكاليف');
+    const costRows=[
+      ['اسم المنتج',val('productName')],
+      ['المنصة',platform],
+      ['سعر البيع',val('salePrice')+' '+curSym],
+      ['تكلفة المنتج',val('productCost')+' '+curSym],
+      ['الشحن',val('shipping')+' '+curSym],
+      ['التغليف',val('packaging')+' '+curSym],
+      ['الإعلانات',val('adCost')+' '+curSym],
+      ['تكاليف أخرى',val('otherCost')+' '+curSym],
+      ['رسوم المنصة',txt('r-fee')+' '+curSym],
+      ['نقطة التعادل',txt('r-brkev')+' وحدة'],
+    ];
+    const costTableStart=row;
+    row=_xlKeyValueTable(sheet,row,numCols,costRows);
+    const costTableEnd=row-1;
+    row++;
+    row=_xlFooter(sheet,row,numCols);
+
+    _autoFitColumns(sheet,numCols,costTableStart,costTableEnd);
+    _finalizeExcelSheet(sheet,numCols,{dateStr});
+    await _downloadExcelWorkbook(workbook,'hasibpro-calculator.xlsx');
+  } catch(e){
+    console.error('Excel export error:',e);
+    alert('تعذّر تصدير Excel — حاول مرة أخرى');
+  } finally {
+    btns.forEach(b=>{b.disabled=false;b.textContent='تصدير Excel';});
   }
 }
 async function exportMonthlyExcel(){
@@ -1113,40 +1268,55 @@ async function exportMonthlyExcel(){
     await _loadExcelJS();
     const workbook=new ExcelJS.Workbook();
     workbook.creator='HasibPro'; workbook.created=new Date();
-    const sheet=workbook.addWorksheet('التتبع الشهري',{views:[{rightToLeft:true,showGridLines:false,state:'frozen',ySplit:3}]});
-    sheet.columns=[
-      {header:'الشهر',key:'month',width:16},
-      {header:'الوحدات',key:'units',width:12},
-      {header:'الإيرادات',key:'revenue',width:14},
-      {header:'التكاليف',key:'cost',width:14},
-      {header:'الهدف',key:'target',width:12},
-      {header:'صافي الربح',key:'profit',width:14},
-    ];
-    _addExcelBranding(workbook,sheet,sheet.columns.length);
-    const dateStr=_addReportMeta(sheet,sheet.columns.length,'تقرير التتبع الشهري');
-    _styleExcelHeader(sheet.getRow(3));
-    let tU=0,tR=0,tC=0,tT=0,tP=0;
-    sortedMonthly().forEach((m,idx)=>{
+    const numCols=5; // matches the Monthly PDF table exactly: الشهر/الوحدات/الإيرادات/التكاليف/صافي الربح
+    const sheet=workbook.addWorksheet('التتبع الشهري',{views:[{rightToLeft:true,showGridLines:false}]});
+    sheet.columns=[{key:'c1',width:16},{key:'c2',width:10},{key:'c3',width:12},{key:'c4',width:12},{key:'c5',width:12}];
+
+    const {row:afterHeaderRow,dateStr}=_xlReportHeader(workbook,sheet,numCols,'تقرير التتبع الشهري');
+    let row=afterHeaderRow;
+    row=_xlSectionTitle(sheet,row,numCols,'التتبع الشهري');
+    const headerRowNum=row;
+    ['الشهر','الوحدات','الإيرادات','التكاليف','صافي الربح'].forEach((h,i)=>{ sheet.getCell(headerRowNum,i+1).value=h; });
+    _styleExcelHeader(sheet.getRow(headerRowNum),true);
+
+    let tU=0,tR=0,tC=0,tP=0;
+    const months=sortedMonthly();
+    months.forEach((m,idx)=>{
+      const dr=headerRowNum+1+idx;
       const profit=(m.r||0)-(m.c||0);
-      const row=sheet.addRow({month:monthLabel(m),units:m.u||0,revenue:m.r||0,cost:m.c||0,target:m.t||0,profit});
-      _styleExcelDataRow(row,idx%2===1);
-      tU+=m.u||0;tR+=m.r||0;tC+=m.c||0;tT+=m.t||0;tP+=profit;
+      sheet.getCell(dr,1).value=monthLabel(m);
+      sheet.getCell(dr,2).value=m.u||0;
+      sheet.getCell(dr,3).value=m.r||0;
+      sheet.getCell(dr,4).value=m.c||0;
+      sheet.getCell(dr,5).value=profit;
+      _styleExcelDataRow(sheet.getRow(dr),idx%2===1,true);
+      tU+=m.u||0;tR+=m.r||0;tC+=m.c||0;tP+=profit;
     });
-    const filterToRow=sheet.rowCount;
-    _styleExcelTotal(sheet.addRow({month:'الإجمالي',units:tU,revenue:tR,cost:tC,target:tT,profit:tP}));
-    ['revenue','cost','target','profit'].forEach(k=>{sheet.getColumn(k).numFmt='#,##0.00';});
-    // Highlight loss-making months in red and profitable ones in green —
-    // an at-a-glance read on performance, not just raw numbers.
-    const profitCol=sheet.getColumn('profit').letter;
+    const firstDataRow=headerRowNum+1, lastDataRow=headerRowNum+months.length;
+    const totalRowNum=lastDataRow+1;
+    sheet.getCell(totalRowNum,1).value='الإجمالي';
+    sheet.getCell(totalRowNum,2).value=tU;
+    sheet.getCell(totalRowNum,3).value=tR;
+    sheet.getCell(totalRowNum,4).value=tC;
+    sheet.getCell(totalRowNum,5).value=tP;
+    _styleExcelTotal(sheet.getRow(totalRowNum),true);
+    [3,4,5].forEach(c=>{ sheet.getColumn(c).numFmt='#,##0.00'; });
+
+    // Highlight loss-making months in red and profitable ones in green.
+    const profitColLetter=sheet.getColumn(5).letter;
     sheet.addConditionalFormatting({
-      ref:`${profitCol}4:${profitCol}${filterToRow}`,
+      ref:`${profitColLetter}${firstDataRow}:${profitColLetter}${lastDataRow}`,
       rules:[
-        {type:'cellIs',operator:'lessThan',formulae:['0'],priority:1,style:{font:{color:{argb:'FFDC2626'}},fill:{type:'pattern',pattern:'solid',fgColor:{argb:'FFFEE2E2'}}}},
-        {type:'cellIs',operator:'greaterThanOrEqual',formulae:['0'],priority:2,style:{font:{color:{argb:'FF059669'}}}}
+        {type:'cellIs',operator:'lessThan',formulae:['0'],priority:1,style:{font:{color:{argb:XL_RED}},fill:{type:'pattern',pattern:'solid',fgColor:{argb:'FFFEE2E2'}}}},
+        {type:'cellIs',operator:'greaterThanOrEqual',formulae:['0'],priority:2,style:{font:{color:{argb:XL_GREEN}}}}
       ]
     });
-    _autoFitColumns(sheet,sheet.columns.length,3,sheet.rowCount);
-    _finalizeExcelSheet(sheet,sheet.columns.length,{dateStr,filterToRow});
+
+    row=totalRowNum+1+1;
+    row=_xlFooter(sheet,row,numCols);
+
+    _autoFitColumns(sheet,numCols,headerRowNum,totalRowNum);
+    _finalizeExcelSheet(sheet,numCols,{dateStr,titleRows:`1:${headerRowNum}`,filterRange:{from:headerRowNum,to:lastDataRow}});
     await _downloadExcelWorkbook(workbook,'hasibpro-monthly.xlsx');
   } catch(e){
     console.error('Excel export error:',e);
@@ -1162,41 +1332,57 @@ async function exportAdsExcel(){
     await _loadExcelJS();
     const workbook=new ExcelJS.Workbook();
     workbook.creator='HasibPro'; workbook.created=new Date();
-    const sheet=workbook.addWorksheet('عائد الإعلانات',{views:[{rightToLeft:true,showGridLines:false,state:'frozen',ySplit:3}]});
-    sheet.columns=[
-      {header:'المنصة',key:'platform',width:20},
-      {header:'الفترة/الحملة',key:'note',width:18},
-      {header:'الإنفاق',key:'spend',width:14},
-      {header:'الإيرادات',key:'revenue',width:14},
-      {header:'الوحدات',key:'units',width:12},
-      {header:'عائد الإنفاق (ROAS)',key:'roas',width:18},
-    ];
-    _addExcelBranding(workbook,sheet,sheet.columns.length);
-    const dateStr=_addReportMeta(sheet,sheet.columns.length,'تقرير عائد الإعلانات');
-    _styleExcelHeader(sheet.getRow(3));
+    const numCols=5; // matches the Ads PDF table exactly: المنصة/الإنفاق/الإيرادات/الوحدات/ROAS
+    const sheet=workbook.addWorksheet('عائد الإعلانات',{views:[{rightToLeft:true,showGridLines:false}]});
+    sheet.columns=[{key:'c1',width:20},{key:'c2',width:12},{key:'c3',width:12},{key:'c4',width:10},{key:'c5',width:10}];
+
+    const {row:afterHeaderRow,dateStr}=_xlReportHeader(workbook,sheet,numCols,'تقرير عائد الإعلانات');
+    let row=afterHeaderRow;
+    row=_xlSectionTitle(sheet,row,numCols,'عائد الإعلانات');
+    const headerRowNum=row;
+    ['المنصة','الإنفاق','الإيرادات','الوحدات','ROAS'].forEach((h,i)=>{ sheet.getCell(headerRowNum,i+1).value=h; });
+    _styleExcelHeader(sheet.getRow(headerRowNum),true);
+
     let tSp=0,tRv=0,tUn=0;
     adsData.forEach((a,idx)=>{
+      const dr=headerRowNum+1+idx;
       const roas=a.sp>0?+((a.rv||0)/a.sp).toFixed(2):0;
-      const row=sheet.addRow({platform:a.p||'—',note:a.note||'',spend:a.sp||0,revenue:a.rv||0,units:a.un||0,roas});
-      _styleExcelDataRow(row,idx%2===1);
+      const label=a.p+(a.note?(' - '+a.note):'');
+      sheet.getCell(dr,1).value=label||'—';
+      sheet.getCell(dr,2).value=a.sp||0;
+      sheet.getCell(dr,3).value=a.rv||0;
+      sheet.getCell(dr,4).value=a.un||0;
+      sheet.getCell(dr,5).value=roas;
+      _styleExcelDataRow(sheet.getRow(dr),idx%2===1,true);
       tSp+=a.sp||0;tRv+=a.rv||0;tUn+=a.un||0;
     });
-    const filterToRow=sheet.rowCount;
+    const firstDataRow=headerRowNum+1, lastDataRow=headerRowNum+adsData.length;
+    const totalRowNum=lastDataRow+1;
     const tRoas=tSp>0?+(tRv/tSp).toFixed(2):0;
-    _styleExcelTotal(sheet.addRow({platform:'الإجمالي',note:'',spend:tSp,revenue:tRv,units:tUn,roas:tRoas}));
-    ['spend','revenue','roas'].forEach(k=>{sheet.getColumn(k).numFmt='#,##0.00';});
-    // Flag weak ad spend (ROAS < 1 = losing money) in red and strong spend
-    // (ROAS >= 2) in green, so underperforming campaigns jump out visually.
-    const roasCol=sheet.getColumn('roas').letter;
+    sheet.getCell(totalRowNum,1).value='الإجمالي';
+    sheet.getCell(totalRowNum,2).value=tSp;
+    sheet.getCell(totalRowNum,3).value=tRv;
+    sheet.getCell(totalRowNum,4).value=tUn;
+    sheet.getCell(totalRowNum,5).value=tRoas;
+    _styleExcelTotal(sheet.getRow(totalRowNum),true);
+    [2,3,5].forEach(c=>{ sheet.getColumn(c).numFmt='#,##0.00'; });
+
+    // Flag weak ad spend (ROAS < 1 = losing money) in red, strong spend
+    // (ROAS >= 2) in green.
+    const roasColLetter=sheet.getColumn(5).letter;
     sheet.addConditionalFormatting({
-      ref:`${roasCol}4:${roasCol}${filterToRow}`,
+      ref:`${roasColLetter}${firstDataRow}:${roasColLetter}${lastDataRow}`,
       rules:[
-        {type:'cellIs',operator:'lessThan',formulae:['1'],priority:1,style:{font:{color:{argb:'FFDC2626'}},fill:{type:'pattern',pattern:'solid',fgColor:{argb:'FFFEE2E2'}}}},
-        {type:'cellIs',operator:'greaterThanOrEqual',formulae:['2'],priority:2,style:{font:{color:{argb:'FF059669'}},fill:{type:'pattern',pattern:'solid',fgColor:{argb:'FFE6FAF5'}}}}
+        {type:'cellIs',operator:'lessThan',formulae:['1'],priority:1,style:{font:{color:{argb:XL_RED}},fill:{type:'pattern',pattern:'solid',fgColor:{argb:'FFFEE2E2'}}}},
+        {type:'cellIs',operator:'greaterThanOrEqual',formulae:['2'],priority:2,style:{font:{color:{argb:XL_GREEN}},fill:{type:'pattern',pattern:'solid',fgColor:{argb:'FFE6FAF5'}}}}
       ]
     });
-    _autoFitColumns(sheet,sheet.columns.length,3,sheet.rowCount);
-    _finalizeExcelSheet(sheet,sheet.columns.length,{dateStr,filterToRow});
+
+    row=totalRowNum+1+1;
+    row=_xlFooter(sheet,row,numCols);
+
+    _autoFitColumns(sheet,numCols,headerRowNum,totalRowNum);
+    _finalizeExcelSheet(sheet,numCols,{dateStr,titleRows:`1:${headerRowNum}`,filterRange:{from:headerRowNum,to:lastDataRow}});
     await _downloadExcelWorkbook(workbook,'hasibpro-ads.xlsx');
   } catch(e){
     console.error('Excel export error:',e);
