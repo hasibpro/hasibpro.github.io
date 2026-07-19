@@ -1038,6 +1038,20 @@ function _addExcelBranding(workbook,sheet,numCols){
     sheet.addImage(imgId,{tl:{col:numCols-1,row:0.08},ext:{width:44,height:44}});
   } catch(e){ console.error('HasibPro logo embed failed:',e); }
 }
+// Confines the printable/visible area to the actual report (no runaway blank
+// columns), scales to one page wide, and centers it — so opening or printing
+// the file shows a tidy, self-contained document instead of a table adrift
+// in a sea of empty spreadsheet cells.
+function _finalizeExcelSheet(sheet,numCols){
+  const lastCol=sheet.getColumn(numCols).letter;
+  const lastRow=sheet.rowCount;
+  sheet.pageSetup.printArea=`A1:${lastCol}${lastRow}`;
+  sheet.pageSetup.fitToPage=true;
+  sheet.pageSetup.fitToWidth=1;
+  sheet.pageSetup.fitToHeight=0;
+  sheet.pageSetup.horizontalCentered=true;
+  sheet.pageSetup.margins={left:0.4,right:0.4,top:0.5,bottom:0.5,header:0.2,footer:0.2};
+}
 async function exportMonthlyExcel(){
   const btns=document.querySelectorAll('[onclick="exportMonthlyExcel()"]');
   btns.forEach(b=>{b.disabled=true;b.textContent='⏳ ...';});
@@ -1065,6 +1079,7 @@ async function exportMonthlyExcel(){
     });
     _styleExcelTotal(sheet.addRow({month:'الإجمالي',units:tU,revenue:tR,cost:tC,target:tT,profit:tP}));
     ['revenue','cost','target','profit'].forEach(k=>{sheet.getColumn(k).numFmt='#,##0.00';});
+    _finalizeExcelSheet(sheet,sheet.columns.length);
     await _downloadExcelWorkbook(workbook,'hasibpro-monthly.xlsx');
   } catch(e){
     console.error('Excel export error:',e);
@@ -1101,6 +1116,7 @@ async function exportAdsExcel(){
     const tRoas=tSp>0?+(tRv/tSp).toFixed(2):0;
     _styleExcelTotal(sheet.addRow({platform:'الإجمالي',note:'',spend:tSp,revenue:tRv,units:tUn,roas:tRoas}));
     ['spend','revenue','roas'].forEach(k=>{sheet.getColumn(k).numFmt='#,##0.00';});
+    _finalizeExcelSheet(sheet,sheet.columns.length);
     await _downloadExcelWorkbook(workbook,'hasibpro-ads.xlsx');
   } catch(e){
     console.error('Excel export error:',e);
