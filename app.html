@@ -19,7 +19,7 @@ body.light .header{background:linear-gradient(135deg,#1e3a5f,#1e40af);}
 .header-icon{width:44px;height:44px;border-radius:9px;background:linear-gradient(135deg,var(--teal),var(--blue));display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
 .header-title{font-size:13px;font-weight:800;color:#e2e8f0;line-height:1.2;}
 .header-sub{font-size:10px;color:#64748b;}
-.header-right{display:flex;align-items:center;gap:14px;}
+.header-right{display:flex;align-items:center;gap:14px;flex-wrap:wrap;row-gap:6px;justify-content:flex-start;}
 /* Desktop-only: fills the empty left side of the wide header bar with a
    live snapshot instead of leaving it blank. Hidden on mobile/narrow
    viewports (below) where there's no spare room and it would just crowd
@@ -28,6 +28,37 @@ body.light .header{background:linear-gradient(135deg,#1e3a5f,#1e40af);}
 .header-summary-label{font-size:10px;color:var(--text3);font-weight:700;}
 .header-summary-value{font-size:14px;font-weight:900;color:var(--teal);}
 @media(min-width:860px){.header-summary{display:flex;}}
+/* Narrow phones: the icon has flex-shrink:0 and the buttons don't shrink
+   well either, so once header-logo + user-info are squeezed into one
+   group there isn't room left for the long English subtitle — it was
+   wrapping onto 3 lines and shoving the buttons apart. Drop the subtitle
+   (the Arabic title already says what the app is) and trim sizes instead
+   of letting the browser fight over the space. */
+@media(max-width:480px){
+  .header{padding:8px 10px;}
+  .header-right{gap:8px;}
+  .header-logo,.header-logo>div:last-child{min-width:0;}
+  .header-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px!important;}
+  .header-sub{display:none;}
+  .header-icon{width:32px!important;height:32px!important;}
+  .header-icon img{width:52px!important;height:52px!important;}
+  .user-info{gap:5px;flex-shrink:0;}
+  .user-name{max-width:46px;}
+  .logout-btn{padding:5px 8px;font-size:10px;}
+  .logout-btn svg{width:12px;height:12px;}
+}
+/* Mobile: the brand block + the user-tools cluster no longer fight for the
+   same line (that's what produced the cramped, mid-word wrap look) — each
+   gets its own full-width row, brand on top, tools below, both still
+   right-aligned to match the RTL layout. */
+@media(max-width:640px){
+  .header{flex-wrap:wrap;row-gap:8px;}
+  .header-right{flex-direction:column;align-items:flex-end;width:100%;gap:8px;flex-wrap:nowrap;}
+  .header-logo{width:100%;justify-content:flex-end;}
+  .user-info{width:100%;justify-content:flex-end;flex-wrap:wrap;row-gap:6px;}
+  .save-indicator{display:none;}
+  .user-name{max-width:60px;}
+}
 .theme-btn{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:15px;color:var(--text);}
 .cur-bar{background:var(--bg2);border-bottom:1px solid var(--border);padding:6px 14px;display:flex;align-items:center;gap:8px;position:sticky;top:55px;z-index:99;}
 .cur-bar label{font-size:10px;color:var(--text3);font-weight:700;white-space:nowrap;}
