@@ -1004,37 +1004,39 @@ function _splitCols(numCols,parts){
 }
 // The PDF's `<div style="height:4px;background:${PDF_TEAL}">` top accent bar.
 function _xlAccentBar(sheet,row,numCols){
-  const r=sheet.getRow(row); r.height=5;
+  const r=sheet.getRow(row); r.height=6;
   for(let c=1;c<=numCols;c++) sheet.getCell(row,c).fill={type:'pattern',pattern:'solid',fgColor:{argb:XL_TEAL}};
   return row+1;
 }
 // The PDF header: "HasibPro" (brand teal) + subtitle stacked in one block on
 // one side (built with ExcelJS Rich Text so both font sizes/colors live in a
-// single cell, exactly like the PDF's one <div>), logo image on the other.
+// single cell, exactly like the PDF's one <div>), a large logo on the other
+// (far-left column, at print size — small assets like this must be sized up
+// front since Excel never stretches an image to "fill" unused page space).
 function _xlHeaderBand(workbook,sheet,row,numCols){
-  const r=sheet.getRow(row); r.height=50;
+  const r=sheet.getRow(row); r.height=66;
   const titleSpan=Math.max(1,numCols-2);
   sheet.mergeCells(row,1,row,titleSpan);
   const titleCell=sheet.getCell(row,1);
   titleCell.value={richText:[
-    {font:{bold:true,size:16,color:{argb:XL_BRAND}},text:'HasibPro\n'},
-    {font:{size:8,color:{argb:XL_MUTED}},text:'E-Commerce Profit Calculator'}
+    {font:{bold:true,size:22,color:{argb:XL_BRAND}},text:'HasibPro\n'},
+    {font:{size:11,color:{argb:XL_MUTED}},text:'E-Commerce Profit Calculator'}
   ]};
   titleCell.alignment={horizontal:'right',vertical:'middle',wrapText:true};
   sheet.mergeCells(row,titleSpan+1,row,numCols);
   try{
     const imgId=workbook.addImage({base64:HASIBPRO_LOGO_URI.split(',')[1],extension:'png'});
-    sheet.addImage(imgId,{tl:{col:titleSpan+0.15,row:(row-1)+0.08},ext:{width:46,height:46}});
+    sheet.addImage(imgId,{tl:{col:titleSpan+0.1,row:(row-1)+0.06},ext:{width:80,height:80}});
   } catch(e){ console.error('HasibPro logo embed failed:',e); }
   for(let c=1;c<=numCols;c++) sheet.getCell(row,c).border={bottom:{style:'thin',color:{argb:XL_BORDER}}};
   return row+1;
 }
 // The PDF's bold document title line (e.g. "تقرير التتبع الشهري").
 function _xlReportTitle(sheet,row,numCols,title){
-  const r=sheet.getRow(row); r.height=22;
+  const r=sheet.getRow(row); r.height=28;
   sheet.mergeCells(row,1,row,numCols);
   const cell=sheet.getCell(row,1);
-  cell.value=title; cell.font={bold:true,size:13,color:{argb:XL_INK}};
+  cell.value=title; cell.font={bold:true,size:18,color:{argb:XL_INK}};
   cell.alignment={horizontal:'right',vertical:'middle'};
   return row+1;
 }
@@ -1042,23 +1044,23 @@ function _xlReportTitle(sheet,row,numCols,title){
 // muted label over a bold value, spread across 2 physical rows.
 function _xlMetaBox(sheet,row,numCols,meta){
   const labelRow=sheet.getRow(row), valueRow=sheet.getRow(row+1);
-  labelRow.height=14; valueRow.height=16;
+  labelRow.height=18; valueRow.height=24;
   const bounds=_splitCols(numCols,4);
   meta.forEach((m,i)=>{
     const [s,e]=bounds[i];
     sheet.mergeCells(row,s,row,e); sheet.mergeCells(row+1,s,row+1,e);
-    const lc=sheet.getCell(row,s); lc.value=m.label; lc.font={size:8,color:{argb:XL_MUTED}}; lc.alignment={horizontal:m.align,vertical:'middle'};
-    const vc=sheet.getCell(row+1,s); vc.value=m.value; vc.font={bold:true,size:10,color:{argb:XL_INK}}; vc.alignment={horizontal:m.align,vertical:'middle'};
+    const lc=sheet.getCell(row,s); lc.value=m.label; lc.font={size:11,color:{argb:XL_MUTED}}; lc.alignment={horizontal:m.align,vertical:'middle'};
+    const vc=sheet.getCell(row+1,s); vc.value=m.value; vc.font={bold:true,size:14,color:{argb:XL_INK}}; vc.alignment={horizontal:m.align,vertical:'middle'};
   });
   for(let r2=row;r2<=row+1;r2++) for(let c=1;c<=numCols;c++) sheet.getCell(r2,c).fill={type:'pattern',pattern:'solid',fgColor:{argb:XL_SOFTBG}};
   return row+2;
 }
 // The PDF's `_pdfSectionTitle`: bold text with a small teal accent rule.
 function _xlSectionTitle(sheet,row,numCols,title){
-  const r=sheet.getRow(row); r.height=18;
+  const r=sheet.getRow(row); r.height=24;
   sheet.mergeCells(row,1,row,numCols);
   const cell=sheet.getCell(row,1);
-  cell.value=title; cell.font={bold:true,size:11,color:{argb:XL_INK}};
+  cell.value=title; cell.font={bold:true,size:15,color:{argb:XL_INK}};
   cell.alignment={horizontal:'right',vertical:'middle',indent:1};
   sheet.getCell(row,1).border={right:{style:'thick',color:{argb:XL_TEAL}}};
   return row+1;
@@ -1067,13 +1069,13 @@ function _xlSectionTitle(sheet,row,numCols,title){
 // (or red, if `neg`) top accent, muted label over a bold value.
 function _xlKpiCards(sheet,row,numCols,kpis){
   const labelRow=sheet.getRow(row), valueRow=sheet.getRow(row+1);
-  labelRow.height=16; valueRow.height=24;
+  labelRow.height=20; valueRow.height=34;
   const bounds=_splitCols(numCols,4);
   kpis.forEach((k,i)=>{
     const [s,e]=bounds[i];
     sheet.mergeCells(row,s,row,e); sheet.mergeCells(row+1,s,row+1,e);
-    const lc=sheet.getCell(row,s); lc.value=k.l; lc.font={size:8,color:{argb:XL_MUTED}}; lc.alignment={horizontal:'center',vertical:'middle'};
-    const vc=sheet.getCell(row+1,s); vc.value=k.v; vc.font={bold:true,size:13,color:{argb:k.neg?XL_RED:XL_INK}}; vc.alignment={horizontal:'center',vertical:'middle'};
+    const lc=sheet.getCell(row,s); lc.value=k.l; lc.font={size:10,color:{argb:XL_MUTED}}; lc.alignment={horizontal:'center',vertical:'middle'};
+    const vc=sheet.getCell(row+1,s); vc.value=k.v; vc.font={bold:true,size:18,color:{argb:k.neg?XL_RED:XL_INK}}; vc.alignment={horizontal:'center',vertical:'middle'};
     const topColor=k.neg?XL_RED:XL_TEAL;
     for(let c=s;c<=e;c++){
       sheet.getCell(row,c).border={top:{style:'medium',color:{argb:topColor}},left:{style:'thin',color:{argb:XL_BORDER}},right:{style:'thin',color:{argb:XL_BORDER}}};
@@ -1087,10 +1089,10 @@ function _xlKpiCards(sheet,row,numCols,kpis){
 function _xlKeyValueTable(sheet,row,numCols,rows){
   const labelCols=Math.max(1,Math.round(numCols/2));
   rows.forEach(([label,value],i)=>{
-    const r=row+i; const rr=sheet.getRow(r); rr.height=16;
+    const r=row+i; const rr=sheet.getRow(r); rr.height=22;
     sheet.mergeCells(r,1,r,labelCols); sheet.mergeCells(r,labelCols+1,r,numCols);
-    const lc=sheet.getCell(r,1); lc.value=label; lc.font={size:9,color:{argb:XL_MUTED}}; lc.alignment={horizontal:'right',vertical:'middle',indent:1};
-    const vc=sheet.getCell(r,labelCols+1); vc.value=value; vc.font={bold:true,size:9,color:{argb:XL_INK}}; vc.alignment={horizontal:'left',vertical:'middle',indent:1};
+    const lc=sheet.getCell(r,1); lc.value=label; lc.font={size:12,color:{argb:XL_MUTED}}; lc.alignment={horizontal:'right',vertical:'middle',indent:1};
+    const vc=sheet.getCell(r,labelCols+1); vc.value=value; vc.font={bold:true,size:12,color:{argb:XL_INK}}; vc.alignment={horizontal:'left',vertical:'middle',indent:1};
     const bg=i%2===0?XL_WHITE:XL_SOFTBG;
     for(let c=1;c<=numCols;c++){
       sheet.getCell(r,c).fill={type:'pattern',pattern:'solid',fgColor:{argb:bg}};
@@ -1102,45 +1104,46 @@ function _xlKeyValueTable(sheet,row,numCols,rows){
 // The PDF's teal data-table header row (`_pdfTableHeader`).
 function _styleExcelHeader(row,firstColRight){
   row.eachCell((cell,colNum)=>{
-    cell.font={bold:true,color:{argb:XL_WHITE},size:10};
+    cell.font={bold:true,color:{argb:XL_WHITE},size:13};
     cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:XL_TEAL}};
     cell.alignment={horizontal:(firstColRight&&colNum===1)?'right':'center',vertical:'middle',indent:(firstColRight&&colNum===1)?1:0};
     cell.border={top:{style:'thin',color:{argb:XL_TEAL}},bottom:{style:'thin',color:{argb:XL_TEAL}}};
   });
-  row.height=20;
+  row.height=26;
 }
 // The PDF's solid-teal totals row (`_pdfTableTotal`).
 function _styleExcelTotal(row,firstColRight){
   row.eachCell((cell,colNum)=>{
-    cell.font={bold:true,color:{argb:XL_WHITE},size:10};
+    cell.font={bold:true,color:{argb:XL_WHITE},size:13};
     cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:XL_TEAL}};
     cell.alignment={horizontal:(firstColRight&&colNum===1)?'right':'center',vertical:'middle',indent:(firstColRight&&colNum===1)?1:0};
   });
-  row.height=20;
+  row.height=26;
 }
 // Thin bordered + centered data row, with optional zebra striping (mirrors
 // the PDF's alternating white/soft-gray table rows).
 function _styleExcelDataRow(row,alt,firstColRight){
   row.eachCell((cell,colNum)=>{
+    cell.font={size:12,color:{argb:XL_INK}};
     cell.alignment={horizontal:(firstColRight&&colNum===1)?'right':'center',vertical:'middle',indent:(firstColRight&&colNum===1)?1:0};
     cell.border={bottom:{style:'thin',color:{argb:XL_BORDER}}};
     if(alt) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:XL_SOFTBG}};
   });
-  row.height=17;
+  row.height=22;
 }
 // The PDF's footer: tagline on one side, "hasibpro.com" on the other, thin
 // top divider.
 function _xlFooter(sheet,row,numCols){
-  const r=sheet.getRow(row); r.height=14;
+  const r=sheet.getRow(row); r.height=18;
   const bounds=_splitCols(numCols,2);
   sheet.mergeCells(row,bounds[0][0],row,bounds[0][1]);
   const rightCell=sheet.getCell(row,bounds[0][0]);
   rightCell.value='HasibPro — أداة مالية ذكية للتجارة الإلكترونية';
-  rightCell.font={size:7,color:{argb:XL_MUTED}}; rightCell.alignment={horizontal:'right',vertical:'middle'};
+  rightCell.font={size:9,color:{argb:XL_MUTED}}; rightCell.alignment={horizontal:'right',vertical:'middle'};
   sheet.mergeCells(row,bounds[1][0],row,bounds[1][1]);
   const leftCell=sheet.getCell(row,bounds[1][0]);
   leftCell.value='hasibpro.com';
-  leftCell.font={size:7,color:{argb:XL_MUTED}}; leftCell.alignment={horizontal:'left',vertical:'middle'};
+  leftCell.font={size:9,color:{argb:XL_MUTED}}; leftCell.alignment={horizontal:'left',vertical:'middle'};
   for(let c=1;c<=numCols;c++) sheet.getCell(row,c).border={top:{style:'thin',color:{argb:XL_BORDER}}};
   return row+1;
 }
@@ -1155,7 +1158,22 @@ function _autoFitColumns(sheet,numCols,fromRow,toRow){
       const s=typeof v==='number'?v.toLocaleString('en-US',{maximumFractionDigits:2}):String(v);
       if(s.length>maxLen) maxLen=s.length;
     }
-    sheet.getColumn(c).width=Math.min(30,Math.max(9,maxLen+3));
+    sheet.getColumn(c).width=Math.min(34,Math.max(11,maxLen+4));
+  }
+}
+// Content-based widths alone tend to leave the report narrow and centered
+// in a sea of blank page — exactly the "small table, empty margins" look.
+// This scales every column up proportionally (never down) so the report's
+// total width fills most of a printed A4 page, matching how the PDF's
+// fixed ~780px canvas already spans almost the full page.
+function _scaleColumnsToFillPage(sheet,numCols,targetTotal){
+  let total=0;
+  for(let c=1;c<=numCols;c++) total+=sheet.getColumn(c).width||11;
+  if(total<=0||total>=targetTotal) return;
+  const factor=targetTotal/total;
+  for(let c=1;c<=numCols;c++){
+    const cur=sheet.getColumn(c).width||11;
+    sheet.getColumn(c).width=Math.round(cur*factor*10)/10;
   }
 }
 // Page setup + print header/footer + repeating title band + AutoFilter, so
@@ -1219,7 +1237,13 @@ async function exportCalculatorExcel(){
     workbook.creator='HasibPro'; workbook.created=new Date();
     const numCols=8;
     const sheet=workbook.addWorksheet('حاسبة التكلفة',{views:[{rightToLeft:true,showGridLines:false}]});
-    sheet.columns=Array.from({length:numCols},()=>({width:10}));
+    // Fixed (not auto-fit) widths: this report is a pure merged-cell layout
+    // (KPI cards / key-value table each merge these 8 virtual columns
+    // differently), so per-column content-based auto-fit doesn't map onto
+    // it sensibly. 12 units x 8 columns ~= 96 units, which is what
+    // _scaleColumnsToFillPage targets for the other reports — same
+    // printed-page coverage, reached directly instead of computed.
+    sheet.columns=Array.from({length:numCols},()=>({width:12}));
 
     const get=id=>document.getElementById(id);
     const txt=id=>get(id)?.textContent||'0';
@@ -1259,7 +1283,6 @@ async function exportCalculatorExcel(){
     row++;
     row=_xlFooter(sheet,row,numCols);
 
-    _autoFitColumns(sheet,numCols,costTableStart,costTableEnd);
     _finalizeExcelSheet(sheet,numCols,{dateStr});
     await _downloadExcelWorkbook(workbook,'hasibpro-calculator.xlsx');
   } catch(e){
@@ -1324,6 +1347,7 @@ async function exportMonthlyExcel(){
     row=_xlFooter(sheet,row,numCols);
 
     _autoFitColumns(sheet,numCols,headerRowNum,totalRowNum);
+    _scaleColumnsToFillPage(sheet,numCols,95);
     _finalizeExcelSheet(sheet,numCols,{dateStr,titleRows:`1:${headerRowNum}`,filterRange:{from:headerRowNum,to:lastDataRow}});
     await _downloadExcelWorkbook(workbook,'hasibpro-monthly.xlsx');
   } catch(e){
@@ -1390,6 +1414,7 @@ async function exportAdsExcel(){
     row=_xlFooter(sheet,row,numCols);
 
     _autoFitColumns(sheet,numCols,headerRowNum,totalRowNum);
+    _scaleColumnsToFillPage(sheet,numCols,95);
     _finalizeExcelSheet(sheet,numCols,{dateStr,titleRows:`1:${headerRowNum}`,filterRange:{from:headerRowNum,to:lastDataRow}});
     await _downloadExcelWorkbook(workbook,'hasibpro-ads.xlsx');
   } catch(e){
