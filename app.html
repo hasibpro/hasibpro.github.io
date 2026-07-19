@@ -1024,20 +1024,47 @@ function _xlHeaderBand(workbook,sheet,row,numCols){
   ]};
   titleCell.alignment={horizontal:'right',vertical:'middle',wrapText:true};
   sheet.mergeCells(row,titleSpan+1,row,numCols);
-  try{
-    const imgId=workbook.addImage({base64:HASIBPRO_LOGO_URI.split(',')[1],extension:'png'});
-    // "HasibPro" touches the true right edge simply because its cell starts
-    // at column 1 (the right-most column under RTL) with zero inset. Mirror
-    // that exactly for the logo: anchor at EXACTLY column index numCols-1
-    // (the true last/left-most column, zero fractional inset) so it starts
-    // flush with that boundary instead of floating inward from it — which
-    // is what left the visible gap before. The previous "numCols-1.15"
-    // fraction was the actual bug: for an 8-column sheet that lands the
-    // anchor in the SECOND-to-last column, not the last one.
-    sheet.addImage(imgId,{tl:{col:numCols-1,row:(row-1)+0.03},ext:{width:120,height:120}});
-  } catch(e){ console.error('HasibPro logo embed failed:',e); }
+  // NOTE: the logo image itself is NOT placed here — see _xlPlaceLogo,
+  // called once column widths are finalized (this function runs before
+  // _autoFitColumns/_scaleColumnsToFillPage, so anchoring the image here
+  // against still-provisional widths is exactly what made it land at a
+  // different physical spot in each report; see _xlPlaceLogo for why).
   for(let c=1;c<=numCols;c++) sheet.getCell(row,c).border={bottom:{style:'thin',color:{argb:XL_BORDER}}};
   return row+1;
+}
+// Places the HasibPro logo flush against the true left edge (RTL), sized
+// and positioned IDENTICALLY across every report — regardless of how many
+// columns a report uses or how wide autofit/scaling made the others.
+//
+// An earlier version of this function computed a FRACTIONAL column offset
+// (e.g. {col: 6.83}) to land the image precisely against the last column's
+// real pixel width. That looked correct in the math but was wrong in
+// practice: ExcelJS's fractional column offset is not a fraction of that
+// column's true on-screen pixel width — it's computed against a different
+// internal scale the library uses internally, one that only lets an offset
+// reach a small sliver of a column's real width. Verified directly against
+// ExcelJS's own anchor model: the same "fraction" produced a different real
+// pixel offset depending on the column's width, which is exactly why the
+// logo kept landing in a different spot in each report despite identical
+// code. The only offset that IS reliable is zero — an image anchored flush
+// against a column's left edge, with no fractional nudge.
+//
+// So instead of computing a fraction, this pins the logo to a whole column
+// boundary (zero offset) and forces THAT column — the last one, i.e. the
+// far-left column under RTL — to a fixed width shared by every report,
+// overriding whatever autofit or page-fill scaling gave it. Same column
+// width everywhere means the same image position and the same image size
+// everywhere: the Calculator's 8 fixed columns, and Monthly/Ads' autofit-
+// then-scaled columns, all end up with an identical far-left "logo column".
+// Must be called after _autoFitColumns/_scaleColumnsToFillPage/the
+// fixed-width setup so this override is the last word on that column's width.
+function _xlPlaceLogo(workbook,sheet,headerRow,numCols,sizePx){
+  const logoColUnits=17; // ≈124px — a few px of clear margin around a 120px logo
+  sheet.getColumn(numCols).width=logoColUnits;
+  try{
+    const imgId=workbook.addImage({base64:HASIBPRO_LOGO_URI.split(',')[1],extension:'png'});
+    sheet.addImage(imgId,{tl:{col:numCols-1,row:headerRow-1},ext:{width:sizePx,height:sizePx}});
+  } catch(e){ console.error('HasibPro logo embed failed:',e); }
 }
 // The PDF's bold document title line (e.g. "تقرير التتبع الشهري").
 function _xlReportTitle(sheet,row,numCols,title){
@@ -1298,6 +1325,7 @@ async function exportCalculatorExcel(){
     row++;
     row=_xlFooter(sheet,row,numCols);
 
+    _xlPlaceLogo(workbook,sheet,1,numCols,120);
     _finalizeExcelSheet(sheet,numCols,{dateStr});
     await _downloadExcelWorkbook(workbook,'hasibpro-calculator.xlsx');
   } catch(e){
@@ -1363,6 +1391,7 @@ async function exportMonthlyExcel(){
 
     _autoFitColumns(sheet,numCols,headerRowNum,totalRowNum);
     _scaleColumnsToFillPage(sheet,numCols,95);
+    _xlPlaceLogo(workbook,sheet,1,numCols,120);
     _finalizeExcelSheet(sheet,numCols,{dateStr,titleRows:`1:${headerRowNum}`,filterRange:{from:headerRowNum,to:lastDataRow}});
     await _downloadExcelWorkbook(workbook,'hasibpro-monthly.xlsx');
   } catch(e){
@@ -1430,6 +1459,7 @@ async function exportAdsExcel(){
 
     _autoFitColumns(sheet,numCols,headerRowNum,totalRowNum);
     _scaleColumnsToFillPage(sheet,numCols,95);
+    _xlPlaceLogo(workbook,sheet,1,numCols,120);
     _finalizeExcelSheet(sheet,numCols,{dateStr,titleRows:`1:${headerRowNum}`,filterRange:{from:headerRowNum,to:lastDataRow}});
     await _downloadExcelWorkbook(workbook,'hasibpro-ads.xlsx');
   } catch(e){
