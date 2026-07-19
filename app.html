@@ -35,10 +35,13 @@ body.light .header{background:linear-gradient(135deg,#1e3a5f,#1e40af);}
    (the Arabic title already says what the app is) and trim sizes instead
    of letting the browser fight over the space. */
 @media(max-width:480px){
-  .header{padding:8px 10px;}
-  .header-right{gap:8px;}
+  .header{padding:8px 10px;justify-content:flex-end;}
+  /* margin-left is a physical property (unaffected by dir=rtl), so this
+     pins the group flush to the true right edge no matter what — belt and
+     suspenders alongside justify-content:flex-end above. */
+  .header-right{gap:8px;margin-left:auto;}
   .header-logo,.header-logo>div:last-child{min-width:0;}
-  .header-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px!important;}
+  .header-title{display:none;}
   .header-sub{display:none;}
   .header-icon{width:32px!important;height:32px!important;}
   .header-icon img{width:52px!important;height:52px!important;}
