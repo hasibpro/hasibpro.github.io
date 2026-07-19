@@ -28,24 +28,24 @@ body.light .header{background:linear-gradient(135deg,#1e3a5f,#1e40af);}
 .header-summary-label{font-size:10px;color:var(--text3);font-weight:700;}
 .header-summary-value{font-size:14px;font-weight:900;color:var(--teal);}
 @media(min-width:860px){.header-summary{display:flex;}}
-/* Mobile: now that the long English subtitle is gone, the logo is just a
-   small icon — small enough to share ONE row with the tools cluster again,
-   instead of getting its own near-empty row (that's what left the big
-   blank gaps). `order` puts the tools first visually and the icon last;
-   margin-left:auto (a PHYSICAL property — always right, unconditionally,
-   unlike the flow-relative flex-start/flex-end keywords that kept
-   resolving to the left on this page) pushes the icon flush against the
-   true right edge, leaving the tools flush against the left with nothing
-   pushing them and nothing pulling them apart. */
+/* Mobile: `order` turned out to be no more reliable here than
+   flex-start/flex-end were — the flow apparently didn't actually reverse,
+   so margin-left:auto just pushed the whole (still DOM-ordered) group
+   right as a block instead of separating the two. Taking the logo
+   completely out of the flex flow with position:absolute + right:10px
+   sidesteps flow order entirely — `right` is a true physical CSS property
+   with no flex/RTL ambiguity at all, so it's pinned exactly to the header's
+   right edge no matter what. The tools row keeps using margin-right:auto
+   (confirmed working) to hug the true left edge. */
 @media(max-width:640px){
-  .header{flex-wrap:wrap;row-gap:8px;padding:8px 10px;}
-  .header-right{width:100%;gap:10px;flex-wrap:nowrap;}
-  .header-logo{order:2;width:max-content;flex-shrink:0;margin-left:auto;margin-right:0;}
-  .user-info{order:1;width:max-content;flex-wrap:wrap;row-gap:6px;}
+  .header{flex-wrap:wrap;row-gap:8px;padding:8px 10px;min-height:58px;}
+  .header-right{width:100%;}
+  .header-logo{position:absolute;top:8px;right:10px;width:max-content;}
   .header-title{display:none;}
   .header-sub{display:none;}
   .header-icon{width:42px!important;height:42px!important;}
   .header-icon img{width:70px!important;height:70px!important;}
+  .user-info{width:max-content;max-width:calc(100% - 60px);margin-right:auto;margin-left:0;flex-wrap:wrap;row-gap:6px;}
   .save-indicator{display:none;}
   .user-name{max-width:60px;}
   .logout-btn{padding:5px 8px;font-size:10px;}
