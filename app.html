@@ -28,23 +28,20 @@ body.light .header{background:linear-gradient(135deg,#1e3a5f,#1e40af);}
 .header-summary-label{font-size:10px;color:var(--text3);font-weight:700;}
 .header-summary-value{font-size:14px;font-weight:900;color:var(--teal);}
 @media(min-width:860px){.header-summary{display:flex;}}
-/* Mobile: the brand block + the user-tools cluster no longer fight for the
-   same line — each gets its own full-width row, brand on top, tools below.
-   Positioning: neither justify-content/align-items:flex-end NOR flex-start
-   reliably landed these on the physical right in testing (both logical
-   keywords are flow-relative and, on this page, kept resolving to the
-   left regardless of dir=rtl). margin-left:auto is a PHYSICAL property —
-   always right, unconditionally — so each row is given its natural
-   (shrink-to-fit) width and pushed with an auto left-margin instead of
-   relying on any flex-start/flex-end guess. */
+/* Mobile: now that the long English subtitle is gone, the logo is just a
+   small icon — small enough to share ONE row with the tools cluster again,
+   instead of getting its own near-empty row (that's what left the big
+   blank gaps). `order` puts the tools first visually and the icon last;
+   margin-left:auto (a PHYSICAL property — always right, unconditionally,
+   unlike the flow-relative flex-start/flex-end keywords that kept
+   resolving to the left on this page) pushes the icon flush against the
+   true right edge, leaving the tools flush against the left with nothing
+   pushing them and nothing pulling them apart. */
 @media(max-width:640px){
   .header{flex-wrap:wrap;row-gap:8px;padding:8px 10px;}
-  .header-right{flex-direction:column;align-items:stretch;width:100%;gap:8px;flex-wrap:nowrap;}
-  .header-logo{width:max-content;margin-left:auto;margin-right:0;}
-  /* margin-right:auto is the physical opposite — pushes flush to the LEFT
-     — so the logo (above, pinned right) and the tools row (here) land on
-     opposite sides instead of both stacking on the same side. */
-  .user-info{width:max-content;margin-right:auto;margin-left:0;flex-wrap:wrap;row-gap:6px;}
+  .header-right{width:100%;gap:10px;flex-wrap:nowrap;}
+  .header-logo{order:2;width:max-content;flex-shrink:0;margin-left:auto;margin-right:0;}
+  .user-info{order:1;width:max-content;flex-wrap:wrap;row-gap:6px;}
   .header-title{display:none;}
   .header-sub{display:none;}
   .header-icon{width:42px!important;height:42px!important;}
