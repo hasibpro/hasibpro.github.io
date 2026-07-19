@@ -1014,7 +1014,7 @@ function _xlAccentBar(sheet,row,numCols){
 // (far-left column, at print size — small assets like this must be sized up
 // front since Excel never stretches an image to "fill" unused page space).
 function _xlHeaderBand(workbook,sheet,row,numCols){
-  const r=sheet.getRow(row); r.height=66;
+  const r=sheet.getRow(row); r.height=84;
   const titleSpan=Math.max(1,numCols-2);
   sheet.mergeCells(row,1,row,titleSpan);
   const titleCell=sheet.getCell(row,1);
@@ -1026,7 +1026,10 @@ function _xlHeaderBand(workbook,sheet,row,numCols){
   sheet.mergeCells(row,titleSpan+1,row,numCols);
   try{
     const imgId=workbook.addImage({base64:HASIBPRO_LOGO_URI.split(',')[1],extension:'png'});
-    sheet.addImage(imgId,{tl:{col:titleSpan+0.1,row:(row-1)+0.06},ext:{width:80,height:80}});
+    // Anchored near the LAST column (the true far-left edge under RTL), not
+    // just past the title's edge — pinning it to the page's outer corner
+    // instead of floating closer to the center, plus enlarged for visibility.
+    sheet.addImage(imgId,{tl:{col:numCols-1.15,row:(row-1)+0.05},ext:{width:100,height:100}});
   } catch(e){ console.error('HasibPro logo embed failed:',e); }
   for(let c=1;c<=numCols;c++) sheet.getCell(row,c).border={bottom:{style:'thin',color:{argb:XL_BORDER}}};
   return row+1;
@@ -1055,14 +1058,17 @@ function _xlMetaBox(sheet,row,numCols,meta){
   for(let r2=row;r2<=row+1;r2++) for(let c=1;c<=numCols;c++) sheet.getCell(r2,c).fill={type:'pattern',pattern:'solid',fgColor:{argb:XL_SOFTBG}};
   return row+2;
 }
-// The PDF's `_pdfSectionTitle`: bold text with a small teal accent rule.
+// The PDF's `_pdfSectionTitle`: bold section-title text. (No accent-rule
+// border here anymore — on a right-to-left sheet, a border assigned to a
+// merged cell's "right" edge renders mirrored, on the visual left, which
+// looked like a stray line unrelated to the title. Removed rather than
+// repositioned, per instruction to just remove it.)
 function _xlSectionTitle(sheet,row,numCols,title){
   const r=sheet.getRow(row); r.height=24;
   sheet.mergeCells(row,1,row,numCols);
   const cell=sheet.getCell(row,1);
   cell.value=title; cell.font={bold:true,size:15,color:{argb:XL_INK}};
   cell.alignment={horizontal:'right',vertical:'middle',indent:1};
-  sheet.getCell(row,1).border={right:{style:'thick',color:{argb:XL_TEAL}}};
   return row+1;
 }
 // The PDF's KPI cards (Cost Calculator report only): 4 bordered boxes, teal
@@ -1191,6 +1197,11 @@ function _finalizeExcelSheet(sheet,numCols,opts){
   sheet.pageSetup.horizontalCentered=true;
   sheet.pageSetup.margins={left:0.4,right:0.4,top:0.5,bottom:0.5,header:0.2,footer:0.2};
   sheet.headerFooter={
+    // No oddHeader: the in-sheet header band (logo + "HasibPro" + subtitle)
+    // already IS the report's header — a second "HasibPro" printed in the
+    // page's margin above it was redundant, so it's been removed entirely
+    // rather than just relabeled.
+    //
     // IMPORTANT: Excel's header/footer mini-language reads a &N font-size
     // code as ALL the digits immediately following it (e.g. "&8" + "19..."
     // is parsed as font size 819, not "size 8" followed by the text "19").
@@ -1199,7 +1210,6 @@ function _finalizeExcelSheet(sheet,numCols,opts){
     // page-filling digits seen in print preview. Fixed by inserting a
     // non-digit label ("بتاريخ: ") right after the font-size code, which
     // terminates the digit run before any dynamic text begins.
-    oddHeader:'&C&B&14HasibPro',
     oddFooter:'&L&8HasibPro — نظام إدارة الأرباح&C&8صفحة &P من &N&R&8بتاريخ: '+((opts&&opts.dateStr)||'')
   };
   if(opts&&opts.filterRange){
