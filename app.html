@@ -1173,8 +1173,16 @@ function _finalizeExcelSheet(sheet,numCols,opts){
   sheet.pageSetup.horizontalCentered=true;
   sheet.pageSetup.margins={left:0.4,right:0.4,top:0.5,bottom:0.5,header:0.2,footer:0.2};
   sheet.headerFooter={
+    // IMPORTANT: Excel's header/footer mini-language reads a &N font-size
+    // code as ALL the digits immediately following it (e.g. "&8" + "19..."
+    // is parsed as font size 819, not "size 8" followed by the text "19").
+    // The date string always starts with a day number, so it must never be
+    // concatenated directly after a bare "&8" — that produced the giant,
+    // page-filling digits seen in print preview. Fixed by inserting a
+    // non-digit label ("بتاريخ: ") right after the font-size code, which
+    // terminates the digit run before any dynamic text begins.
     oddHeader:'&C&B&14HasibPro',
-    oddFooter:'&L&8HasibPro — نظام إدارة الأرباح&C&8صفحة &P من &N&R&8'+((opts&&opts.dateStr)||'')
+    oddFooter:'&L&8HasibPro — نظام إدارة الأرباح&C&8صفحة &P من &N&R&8بتاريخ: '+((opts&&opts.dateStr)||'')
   };
   if(opts&&opts.filterRange){
     sheet.autoFilter={from:{row:opts.filterRange.from,column:1},to:{row:opts.filterRange.to,column:numCols}};
