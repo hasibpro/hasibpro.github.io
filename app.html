@@ -981,36 +981,61 @@ async function _downloadExcelWorkbook(workbook,filename){
   document.body.appendChild(a);a.click();document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+const _EXCEL_BORDER={
+  top:{style:'thin',color:{argb:'FFE2E8F0'}}, left:{style:'thin',color:{argb:'FFE2E8F0'}},
+  bottom:{style:'thin',color:{argb:'FFE2E8F0'}}, right:{style:'thin',color:{argb:'FFE2E8F0'}}
+};
 function _styleExcelHeader(row){
   row.eachCell(cell=>{
     cell.font={bold:true,color:{argb:'FFFFFFFF'},size:11};
     cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF00B894'}};
     cell.alignment={horizontal:'center',vertical:'middle'};
+    cell.border=_EXCEL_BORDER;
   });
-  row.height=20;
+  row.height=22;
 }
 function _styleExcelTotal(row){
   row.eachCell(cell=>{
     cell.font={bold:true,color:{argb:'FF0F172A'}};
     cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFE6FAF5'}};
     cell.alignment={horizontal:'center',vertical:'middle'};
+    cell.border=_EXCEL_BORDER;
   });
+  row.height=20;
 }
-// Adds HasibPro logo + brand-color title row above the data table, so
-// exported spreadsheets carry the same branding as the PDF reports.
+// Thin bordered + centered styling for ordinary data rows, with optional
+// light zebra striping so long tables stay readable.
+function _styleExcelDataRow(row,alt){
+  row.eachCell(cell=>{
+    cell.alignment={horizontal:'center',vertical:'middle'};
+    cell.border=_EXCEL_BORDER;
+    if(alt) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF8FAFC'}};
+  });
+  row.height=18;
+}
+// Adds a HasibPro logo + brand-color title banner above the data table, so
+// exported spreadsheets carry the same branding as the PDF reports. The
+// banner fills the full row width (not just the merged text) and gets a
+// teal accent rule along its bottom edge, matching the PDF header's look —
+// this avoids the "tiny text floating in a blank sheet" appearance.
 function _addExcelBranding(workbook,sheet,numCols){
   sheet.spliceRows(1,0,['']);
   const brandRow=sheet.getRow(1);
-  brandRow.height=34;
+  brandRow.height=48;
   const titleSpan=Math.max(1,numCols-1);
   sheet.mergeCells(1,1,1,titleSpan);
   const titleCell=sheet.getCell(1,1);
   titleCell.value='HasibPro';
-  titleCell.font={bold:true,size:16,color:{argb:'FF00D4AA'}};
+  titleCell.font={bold:true,size:20,color:{argb:'FF00D4AA'}};
   titleCell.alignment={horizontal:'center',vertical:'middle'};
+  for(let c=1;c<=numCols;c++){
+    const cell=sheet.getCell(1,c);
+    cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFE6FAF5'}};
+    cell.border={bottom:{style:'medium',color:{argb:'FF00D4AA'}}};
+  }
   try{
     const imgId=workbook.addImage({base64:HASIBPRO_LOGO_URI.split(',')[1],extension:'png'});
-    sheet.addImage(imgId,{tl:{col:numCols-1,row:0},ext:{width:30,height:30}});
+    sheet.addImage(imgId,{tl:{col:numCols-1,row:0.08},ext:{width:44,height:44}});
   } catch(e){ console.error('HasibPro logo embed failed:',e); }
 }
 async function exportMonthlyExcel(){
@@ -1020,7 +1045,7 @@ async function exportMonthlyExcel(){
     await _loadExcelJS();
     const workbook=new ExcelJS.Workbook();
     workbook.creator='HasibPro'; workbook.created=new Date();
-    const sheet=workbook.addWorksheet('التتبع الشهري',{views:[{rightToLeft:true}]});
+    const sheet=workbook.addWorksheet('التتبع الشهري',{views:[{rightToLeft:true,showGridLines:false,state:'frozen',ySplit:2}]});
     sheet.columns=[
       {header:'الشهر',key:'month',width:16},
       {header:'الوحدات',key:'units',width:12},
@@ -1032,9 +1057,10 @@ async function exportMonthlyExcel(){
     _addExcelBranding(workbook,sheet,sheet.columns.length);
     _styleExcelHeader(sheet.getRow(2));
     let tU=0,tR=0,tC=0,tT=0,tP=0;
-    sortedMonthly().forEach(m=>{
+    sortedMonthly().forEach((m,idx)=>{
       const profit=(m.r||0)-(m.c||0);
-      sheet.addRow({month:monthLabel(m),units:m.u||0,revenue:m.r||0,cost:m.c||0,target:m.t||0,profit});
+      const row=sheet.addRow({month:monthLabel(m),units:m.u||0,revenue:m.r||0,cost:m.c||0,target:m.t||0,profit});
+      _styleExcelDataRow(row,idx%2===1);
       tU+=m.u||0;tR+=m.r||0;tC+=m.c||0;tT+=m.t||0;tP+=profit;
     });
     _styleExcelTotal(sheet.addRow({month:'الإجمالي',units:tU,revenue:tR,cost:tC,target:tT,profit:tP}));
@@ -1054,7 +1080,7 @@ async function exportAdsExcel(){
     await _loadExcelJS();
     const workbook=new ExcelJS.Workbook();
     workbook.creator='HasibPro'; workbook.created=new Date();
-    const sheet=workbook.addWorksheet('عائد الإعلانات',{views:[{rightToLeft:true}]});
+    const sheet=workbook.addWorksheet('عائد الإعلانات',{views:[{rightToLeft:true,showGridLines:false,state:'frozen',ySplit:2}]});
     sheet.columns=[
       {header:'المنصة',key:'platform',width:20},
       {header:'الفترة/الحملة',key:'note',width:18},
@@ -1066,9 +1092,10 @@ async function exportAdsExcel(){
     _addExcelBranding(workbook,sheet,sheet.columns.length);
     _styleExcelHeader(sheet.getRow(2));
     let tSp=0,tRv=0,tUn=0;
-    adsData.forEach(a=>{
+    adsData.forEach((a,idx)=>{
       const roas=a.sp>0?+((a.rv||0)/a.sp).toFixed(2):0;
-      sheet.addRow({platform:a.p||'—',note:a.note||'',spend:a.sp||0,revenue:a.rv||0,units:a.un||0,roas});
+      const row=sheet.addRow({platform:a.p||'—',note:a.note||'',spend:a.sp||0,revenue:a.rv||0,units:a.un||0,roas});
+      _styleExcelDataRow(row,idx%2===1);
       tSp+=a.sp||0;tRv+=a.rv||0;tUn+=a.un||0;
     });
     const tRoas=tSp>0?+(tRv/tSp).toFixed(2):0;
