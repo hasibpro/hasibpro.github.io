@@ -2333,6 +2333,30 @@ function _generatePDFReport(_eb, sections, docTitle, filename) {
 
 
 
+// The header's real height keeps changing (the desktop-only profit-summary
+// widget, the mobile-only single/double-row logo layout, font/logo-size
+// tweaks…) but .cur-bar / .nav-tabs pin themselves below it with hardcoded
+// sticky `top` offsets — so any header height change made those offsets
+// stale and let the bars overlap on scroll. Measuring the real heights at
+// runtime instead of guessing a fixed pixel number keeps them in sync no
+// matter what the header ends up containing.
+function _syncStickyOffsets(){
+  const header=document.querySelector('.header');
+  const curBar=document.querySelector('.cur-bar');
+  const navTabs=document.querySelector('.nav-tabs');
+  if(!header||!curBar||!navTabs) return;
+  const headerH=header.offsetHeight;
+  curBar.style.top=headerH+'px';
+  const curBarH=curBar.offsetHeight;
+  navTabs.style.top=(headerH+curBarH)+'px';
+}
+window.addEventListener('resize',()=>requestAnimationFrame(_syncStickyOffsets));
+// Fonts and the logo image can finish loading a moment after first paint
+// and nudge the header's height slightly — resync once more when they do,
+// plus one delayed safety pass for anything else that shifts layout late.
+if(document.fonts&&document.fonts.ready) document.fonts.ready.then(_syncStickyOffsets).catch(()=>{});
+setTimeout(_syncStickyOffsets,500);
+
 // ===== MAIN =====
 window.addEventListener('DOMContentLoaded', async () => {
 
@@ -2343,6 +2367,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     const ac = document.getElementById('appContent');
     if(ls) ls.style.display = 'none';
     if(ac) ac.style.display = 'block';
+    requestAnimationFrame(_syncStickyOffsets);
   };
 
   const showError = (msg) => {
