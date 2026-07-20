@@ -14,10 +14,10 @@ body.light{--bg:#f1f5f9;--bg2:#ffffff;--bg3:#e2e8f0;--card:#ffffff;--card2:#f8fa
 body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background 0.3s,color 0.3s;}
 #appContent{display:none;}
 .header{background:linear-gradient(135deg,#0d1b2e,#0a1628);border-bottom:1px solid var(--border);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
-/* Light mode: a deep shade of the brand teal instead of navy blue — same
-   dark-enough contrast for the logo/text, but reads as "on-brand" rather
-   than a generic dark blue bar. */
-body.light .header{background:linear-gradient(135deg,#00695c,#004d40);}
+/* Light mode: a brighter, more vivid brand teal — starts at the app's own
+   --teal2 (#00b894, used elsewhere for icons/accents) fading to a deeper
+   teal, instead of the very dark shade tried before. */
+body.light .header{background:linear-gradient(135deg,#00b894,#00695c);}
 .header-logo{display:flex;align-items:center;gap:9px;}
 .header-icon{width:44px;height:44px;border-radius:9px;background:linear-gradient(135deg,var(--teal),var(--blue));display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
 .header-title{font-size:13px;font-weight:800;color:#e2e8f0;line-height:1.2;}
