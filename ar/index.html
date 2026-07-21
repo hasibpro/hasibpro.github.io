@@ -27,6 +27,10 @@
 --radius: 16px;
 --grad: linear-gradient(135deg, var(--teal), var(--blue));
 }
+body.light {
+--bg: #f1f5f9; --bg2: #ffffff; --card: #ffffff; --card2: #f8fafc;
+--border: #cbd5e1; --text: #1e293b; --text2: #475569; --text3: #4b5768;
+}
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body {
@@ -35,7 +39,13 @@ background: var(--bg);
 color: var(--text);
 min-height: 100vh;
 overflow-x: hidden;
+transition: background .3s, color .3s;
 }
+/* Hand-tuned white-on-dark overlays that don't use the vars above. */
+body.light nav{background:rgba(255,255,255,.85);}
+body.light .platforms,body.light .how,body.light .pricing,body.light .faq,body.light .ticker-wrap{border-top-color:rgba(0,0,0,.06);border-bottom-color:rgba(0,0,0,.06);}
+body.light .ticker-wrap{background:rgba(0,0,0,.02);}
+.theme-btn{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:7px 9px;cursor:pointer;color:var(--text);display:flex;align-items:center;justify-content:center;}
 
 /* ===== SCROLLBAR ===== */
 ::-webkit-scrollbar { width: 5px; }
@@ -965,6 +975,7 @@ nav { padding: 10px 14px; }
  <a href="#features" class="nav-link">المميزات</a>
  <a href="#pricing" class="nav-link">الأسعار</a>
  <a href="#faq" class="nav-link">الأسئلة الشائعة</a>
+ <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="تبديل المظهر"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></button>
  <a href="/auth.html" class="btn-nav">ابدأ مجاناً ←</a>
  </div>
  <a href="/auth.html" class="btn-nav" style="display:none" id="mobileBtn">ابدأ ←</a>
@@ -1356,6 +1367,26 @@ nav { padding: 10px 14px; }
 </footer>
 
 <script>
+// ===== THEME (shared with app.html/auth.html/index.html via localStorage) =====
+let isDark=true;
+(function initTheme(){
+  let saved=null;
+  try{saved=localStorage.getItem('hasibpro_theme');}catch(e){}
+  if(saved==='light'){
+    isDark=false;
+    document.body.classList.add('light');
+    const tb=document.getElementById('themeBtn');
+    if(tb)tb.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
+  }
+})();
+function toggleTheme(){
+  isDark=!isDark;
+  document.body.classList.toggle('light',!isDark);
+  try{localStorage.setItem('hasibpro_theme',isDark?'dark':'light');}catch(e){}
+  const tb=document.getElementById('themeBtn');
+  if(tb)tb.innerHTML=isDark?'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>':'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
+}
+
 // Mobile nav btn
 window.addEventListener('load', () => {
 const mBtn = document.getElementById('mobileBtn');
