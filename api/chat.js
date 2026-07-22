@@ -43,6 +43,53 @@ function sanitizeSystemData(str, max = 12000) {
 
 const store = new Map();
 
+// ===== SERVER-SIDE PRO GATING =====
+// The client-side gate (isProUser/gateFeature in app.html) is UX only — a
+// technical user could bypass it by editing JS or calling /api/chat directly.
+// This is the real enforcement: the AI endpoint (the one that actually costs
+// money per call) verifies the caller's plan against Supabase before ever
+// touching Groq. URL + anon key are public values (already shipped in the
+// client) and can be overridden via Vercel env vars.
+const SB_URL = process.env.SUPABASE_URL || 'https://aikfhneieichdkdcrwjs.supabase.co';
+const SB_ANON = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFpa2ZobmVpZWljaGRrZGNyd2pzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNTYyNjAsImV4cCI6MjA5MzYzMjI2MH0.9qgNjqlVy94zK5JtmzLi9AXWaiJwqh9BRMIxheSP6lI';
+
+// Returns { ok:true } if the bearer-token user is pro or on an active trial,
+// else { ok:false, reason:'unauthorized'|'pro_required'|'server' }.
+async function verifyPlan(req) {
+  const auth = req.headers['authorization'] || req.headers['Authorization'] || '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
+  if (!token) return { ok: false, reason: 'unauthorized' };
+  try {
+    // 1) Validate the JWT and resolve the user id.
+    const uResp = await fetch(`${SB_URL}/auth/v1/user`, {
+      headers: { apikey: SB_ANON, Authorization: `Bearer ${token}` }
+    });
+    if (!uResp.ok) return { ok: false, reason: 'unauthorized' };
+    const user = await uResp.json();
+    const uid = user && user.id;
+    if (!uid) return { ok: false, reason: 'unauthorized' };
+    // 2) Read the user's plan from their own row (RLS lets them read it).
+    const dResp = await fetch(
+      `${SB_URL}/rest/v1/user_data?user_id=eq.${uid}&select=plan,trial_ends_at`,
+      { headers: { apikey: SB_ANON, Authorization: `Bearer ${token}` } }
+    );
+    if (!dResp.ok) return { ok: false, reason: 'server' };
+    const rows = await dResp.json();
+    const row = Array.isArray(rows) && rows[0] ? rows[0] : null;
+    // Brand-new authenticated user with no row yet = trial just starting
+    // (mirrors the client's checkTrial default).
+    if (!row) return { ok: true };
+    if (row.plan === 'pro') return { ok: true };
+    const trialActive = row.plan === 'trial' && row.trial_ends_at &&
+      new Date(row.trial_ends_at) > new Date();
+    if (trialActive) return { ok: true };
+    return { ok: false, reason: 'pro_required' };
+  } catch (e) {
+    console.error('[HasibPro] verifyPlan error:', e.message);
+    return { ok: false, reason: 'server' };
+  }
+}
+
 function rateLimit(ip) {
   const now = Date.now();
   const rec = store.get(ip) || { n: 0, t: now };
@@ -73,6 +120,18 @@ export default async function handler(req, res) {
   const ip = (req.headers['x-forwarded-for'] || 'unknown').split(',')[0].trim();
   if (!rateLimit(ip)) {
     return res.status(429).json({ error: 'كثرت الطلبات — انتظر دقيقة' });
+  }
+
+  // Server-side Pro enforcement — the real gate for this paid feature.
+  const gate = await verifyPlan(req);
+  if (!gate.ok) {
+    if (gate.reason === 'pro_required') {
+      return res.status(403).json({ error: 'المساعد الذكي متاح في خطة Pro — رقّ للاشتراك' });
+    }
+    if (gate.reason === 'server') {
+      return res.status(503).json({ error: 'تعذّر التحقق من الاشتراك — حاول بعد قليل' });
+    }
+    return res.status(401).json({ error: 'انتهت جلستك — سجّل دخولك من جديد' });
   }
 
   const { messages, system } = req.body || {};
