@@ -193,6 +193,8 @@ body.light .toast{box-shadow:0 8px 30px rgba(15,23,42,0.18),0 0 0 4px rgba(0,212
 .logout-btn:hover{background:rgba(239,68,68,0.2);border-color:rgba(239,68,68,0.45);}
 .logout-btn:hover{background:rgba(239,68,68,0.2);}
 .plan-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:9px;font-weight:800;}
+.pro-lock-tag{opacity:0.85;display:inline-flex;align-items:center;}
+.btn.pro-locked{opacity:0.82;}
 .plan-free{background:rgba(100,116,139,0.2);color:#94a3b8;border:1px solid rgba(100,116,139,0.3);}
 .plan-pro{background:rgba(0,212,170,0.15);color:var(--teal);border:1px solid rgba(0,212,170,0.3);}
 .upgrade-banner{background:linear-gradient(135deg,rgba(0,212,170,0.08),rgba(59,130,246,0.08));border:1px solid rgba(0,212,170,0.2);border-radius:12px;padding:16px;text-align:center;margin-bottom:12px;}
@@ -399,8 +401,8 @@ try{if(localStorage.getItem('hasibpro_theme')==='light')document.body.classList.
  </div>
  <div class="chart-wrap" style="height:160px"><canvas id="costChart"></canvas></div>
  <div class="btn-row">
- <button class="btn btn-primary" onclick="exportCalculatorPDF()" style="display:inline-flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> تصدير PDF</button>
- <button class="btn btn-secondary" onclick="exportCalculatorExcel()" style="display:inline-flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> تصدير Excel</button>
+ <button class="btn btn-primary" onclick="exportCalculatorPDF()" data-pro-lock style="display:inline-flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> تصدير PDF</button>
+ <button class="btn btn-secondary" onclick="exportCalculatorExcel()" data-pro-lock style="display:inline-flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> تصدير Excel</button>
  <button class="btn btn-secondary" onclick="addToCompare()" style="display:inline-flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> أضف للمقارنة</button>
  </div>
  </div>
@@ -409,12 +411,8 @@ try{if(localStorage.getItem('hasibpro_theme')==='light')document.body.classList.
 <div class="section" id="tab-comparison">
  <div class="section-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-bottom:1px"><path d="M12 2v20"/><path d="M2 12h20"/><path d="M5 8l7-6 7 6"/><path d="M5 16l7 6 7-6"/></svg> مقارنة المنتجات</div>
  <div class="card">
- <div class="card-title"><span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-bottom:1px"><line x1="12" y1="2" x2="12" y2="6"/><path d="M12 22v-4"/><path d="M4.93 4.93l2.83 2.83"/><path d="M16.24 7.76l2.83-2.83"/><circle cx="12" cy="12" r="4"/></svg></span> قارن بين 3 منتجات لتعرف الأكثر ربحاً</div>
- <div class="compare-grid">
- <div class="compare-card" id="cp0"></div>
- <div class="compare-card" id="cp1"></div>
- <div class="compare-card" id="cp2"></div>
- </div>
+ <div class="card-title"><span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-bottom:1px"><line x1="12" y1="2" x2="12" y2="6"/><path d="M12 22v-4"/><path d="M4.93 4.93l2.83 2.83"/><path d="M16.24 7.76l2.83-2.83"/><circle cx="12" cy="12" r="4"/></svg></span> قارن منتجاتك لتعرف الأكثر ربحاً</div>
+ <div class="compare-grid" id="compareGrid"></div>
  <div class="btn-row"><button class="btn btn-danger" onclick="clearCompare()" style="display:inline-flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg> مسح المقارنة</button></div>
  </div>
  <div class="card" id="compareChartCard" style="display:none">
@@ -451,8 +449,8 @@ try{if(localStorage.getItem('hasibpro_theme')==='light')document.body.classList.
  إجمالي الإنفاق الإعلاني (كل المنصات، من قسم عائد الإعلانات): <span id="adsSpendSummary" style="color:var(--teal);font-weight:700">0</span> <span class="cur-lbl">درهم</span>
  </div>
  <div class="btn-row">
- <button class="btn btn-primary" onclick="exportMonthlyPDF()" style="display:inline-flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> تصدير PDF</button>
- <button class="btn btn-secondary" onclick="exportMonthlyExcel()" style="display:inline-flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> تصدير Excel</button>
+ <button class="btn btn-primary" onclick="exportMonthlyPDF()" data-pro-lock style="display:inline-flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> تصدير PDF</button>
+ <button class="btn btn-secondary" onclick="exportMonthlyExcel()" data-pro-lock style="display:inline-flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> تصدير Excel</button>
  </div>
  </div>
 </div>
@@ -470,7 +468,7 @@ try{if(localStorage.getItem('hasibpro_theme')==='light')document.body.classList.
  </table>
  </div>
  <div class="chart-wrap" style="margin-top:12px"><canvas id="adsChart"></canvas></div>
- <div class="btn-row"><button class="btn btn-secondary" onclick="exportAdsExcel()" style="display:inline-flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> تصدير Excel</button></div>
+ <div class="btn-row"><button class="btn btn-secondary" onclick="exportAdsExcel()" data-pro-lock style="display:inline-flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> تصدير Excel</button></div>
  </div>
  <div class="card">
  <div class="card-title"><span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-bottom:1px"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span> دليل عائد الإنفاق الإعلاني</div>
@@ -597,10 +595,11 @@ try{if(localStorage.getItem('hasibpro_theme')==='light')document.body.classList.
  <li>حاسبة التكلفة</li>
  <li>9 منصات</li>
  <li>12 عملة</li>
- <li>مقارنة المنتجات</li>
+ <li>مقارنة حتى 3 منتجات</li>
+ <li>تتبع 3 أشهر</li>
  <li class="no">المساعد الذكي</li>
  <li class="no">تتبع شهري غير محدود</li>
- <li class="no">تصدير PDF متقدم</li>
+ <li class="no">تصدير PDF و Excel</li>
  </ul>
  <div id="freePlanBtn"></div>
  </div>
@@ -611,8 +610,9 @@ try{if(localStorage.getItem('hasibpro_theme')==='light')document.body.classList.
  <ul class="price-features">
  <li>كل مميزات المجاني</li>
  <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4e8ef7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-bottom:1px"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg> مساعد ذكي</li>
- <li>تتبع شهري كامل</li>
- <li>تصدير PDF متقدم</li>
+ <li>تتبع شهري غير محدود</li>
+ <li>مقارنة منتجات غير محدودة</li>
+ <li>تصدير PDF و Excel احترافي</li>
  <li>أولوية في الدعم</li>
  <li>مميزات جديدة أولاً</li>
  </ul>
@@ -806,7 +806,7 @@ let adsData=[{p:'فيسبوك/إنستغرام',note:'',sp:0,rv:0,un:0},{p:'جو
 // script top-level does NOT create a window property, so without this the
 // AI always saw empty arrays regardless of what the user entered.
 window.monthlyData=monthlyData;window.adsData=adsData;
-let compareData=[null,null,null];
+let compareData=[];
 // Backward-compat migration: old saved data was a fixed 12-slot array with no y/m keys
 function migrateMonthlyData(arr){
  if(!Array.isArray(arr)||arr.length===0)return Array.from({length:12},(_,i)=>({y:curYear(),m:i,u:0,r:0,c:0,t:0}));
@@ -910,30 +910,44 @@ function addToCompare(){
  const prof=sale-total;const marg=sale>0?prof/sale:0;
  const k=document.getElementById('platform').value;
  const name=document.getElementById('productName').value||'منتج بدون اسم';
- const idx=compareData.findIndex(c=>c===null);
- if(idx===-1){showToast('<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-bottom:1px"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> المقارنة ممتلئة — امسح منتجاً أولاً');return;}
- compareData[idx]={name,sale,total,prof,marg,platform:PLATS[k].name};
+ // Free plan compares up to FREE_LIMITS.compare products; Pro is unlimited.
+ if(!isProUser() && compareData.length>=FREE_LIMITS.compare){
+ gateFeature('مقارنة غير محدودة للمنتجات','النسخة المجانية تقارن حتى '+FREE_LIMITS.compare+' منتجات. رقّ إلى Pro لمقارنة عدد غير محدود من المنتجات دفعة واحدة واختيار الأكثر ربحاً.');
+ return;
+ }
+ compareData.push({name,sale,total,prof,marg,platform:PLATS[k].name});
  showToast('<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-bottom:1px"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> تمت الإضافة للمقارنة!');renderCompare();
 }
+function promptCompareUpgrade(){ showUpgradeModal('مقارنة غير محدودة للمنتجات','النسخة المجانية تقارن حتى '+FREE_LIMITS.compare+' منتجات. رقّ إلى Pro لمقارنة عدد غير محدود من المنتجات.'); }
 
 function renderCompare(){
- const filled=compareData.filter(c=>c!==null);
+ const grid=document.getElementById('compareGrid');
+ if(!grid)return;
+ // Winner = highest margin, only crowned when comparing 2+ products.
  let winIdx=-1;
- if(filled.length>=2)winIdx=compareData.reduce((b,c,i)=>{if(!c)return b;if(b===-1)return i;return c.marg>compareData[b].marg?i:b;},-1);
+ compareData.forEach((c,i)=>{ if(winIdx===-1||c.marg>compareData[winIdx].marg) winIdx=i; });
+ if(compareData.length<2) winIdx=-1;
+ let html='';
+ if(!compareData.length){
+ html='<div class="compare-card" style="grid-column:1/-1;text-align:center;color:var(--text3);font-size:12px;line-height:2;padding:22px;">لا توجد منتجات للمقارنة بعد<br><span style="font-size:11px;">احسب منتجاً في «حاسبة التكلفة» ثم اضغط «أضف للمقارنة»</span></div>';
+ } else {
  compareData.forEach((c,i)=>{
- const el=document.getElementById('cp'+i);
- if(!c){el.className='compare-card';el.innerHTML=`<div style="font-weight:800;font-size:12px;margin-bottom:6px">المنتج ${i+1} <span class="badge badge-teal">فارغ</span></div><div style="color:var(--text3);font-size:11px">أضف من حاسبة التكلفة</div>`;return;}
  const win=(i===winIdx);
- el.className='compare-card'+(win?' winner':'');
- el.innerHTML=`<div style="font-weight:800;font-size:12px;margin-bottom:6px;display:flex;justify-content:space-between">${c.name} ${win?'<span class="badge badge-green"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-bottom:1px"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg> الأفضل</span>':''}</div><div style="font-size:10px;color:var(--text3);margin-bottom:8px">${c.platform}</div><div class="result-item" style="margin-bottom:5px"><div class="result-label">سعر البيع</div><div class="result-value teal">${fmt(c.sale)}</div></div><div class="result-item" style="margin-bottom:5px"><div class="result-label">صافي الربح/وحدة</div><div class="result-value ${c.prof>=0?'green':'red'}">${fmt(c.prof)}</div></div><div class="result-item"><div class="result-label">هامش الربح</div><div class="result-value ${mCol(c.marg)}">${p2(c.marg)}</div></div><button class="btn btn-danger" style="margin-top:8px;font-size:10px;padding:4px 7px" onclick="removeCompare(${i})">إزالة</button>`;
+ html+=`<div class="compare-card${win?' winner':''}"><div style="font-weight:800;font-size:12px;margin-bottom:6px;display:flex;justify-content:space-between">${c.name} ${win?'<span class="badge badge-green"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-bottom:1px"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg> الأفضل</span>':''}</div><div style="font-size:10px;color:var(--text3);margin-bottom:8px">${c.platform}</div><div class="result-item" style="margin-bottom:5px"><div class="result-label">سعر البيع</div><div class="result-value teal">${fmt(c.sale)}</div></div><div class="result-item" style="margin-bottom:5px"><div class="result-label">صافي الربح/وحدة</div><div class="result-value ${c.prof>=0?'green':'red'}">${fmt(c.prof)}</div></div><div class="result-item"><div class="result-label">هامش الربح</div><div class="result-value ${mCol(c.marg)}">${p2(c.marg)}</div></div><button class="btn btn-danger" style="margin-top:8px;font-size:10px;padding:4px 7px" onclick="removeCompare(${i})">إزالة</button></div>`;
  });
- const show=filled.length>=2;
+ // Free user who hit the cap: a dashed "add more with Pro" card.
+ if(!isProUser() && compareData.length>=FREE_LIMITS.compare){
+ html+='<div class="compare-card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;border-style:dashed;cursor:pointer;min-height:120px;" onclick="promptCompareUpgrade()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><div style="font-size:11px;font-weight:800;color:var(--teal)">قارن منتجات أكثر مع Pro</div></div>';
+ }
+ }
+ grid.innerHTML=html;
+ const show=compareData.length>=2;
  document.getElementById('compareChartCard').style.display=show?'block':'none';
  if(show)renderCompareChart();
 }
 
-function removeCompare(i){compareData[i]=null;renderCompare();}
-function clearCompare(){compareData=[null,null,null];renderCompare();}
+function removeCompare(i){compareData.splice(i,1);renderCompare();}
+function clearCompare(){compareData=[];renderCompare();}
 
 function renderCompareChart(){
  const ctx=document.getElementById('compareChart');if(!ctx)return;
@@ -988,6 +1002,11 @@ function openAddMonth(){
  if(mSel&&!mSel.options.length)mSel.innerHTML=MONTHS.map((mn,i)=>`<option value="${i}">${mn}</option>`).join('');
 }
 function addMonthEntry(){
+ // Free plan is capped at FREE_LIMITS.monthly months of history.
+ if(!isProUser() && monthlyData.length>=FREE_LIMITS.monthly){
+ gateFeature('التتبع الشهري غير المحدود','النسخة المجانية تسمح بتتبع '+FREE_LIMITS.monthly+' أشهر فقط. رقّ إلى Pro لتتبع سنة كاملة وأكثر ومقارنة أداء متجرك عبر الزمن.');
+ return;
+ }
  const y=+document.getElementById('newMonthYear').value||curYear();
  const m=+document.getElementById('newMonthIdx').value||0;
  if(monthlyData.some(e=>e.y===y&&e.m===m)){alert('هذا الشهر مضاف من قبل');return;}
@@ -1362,6 +1381,7 @@ function _xlReportHeader(workbook,sheet,numCols,docTitle){
   return {row,dateStr};
 }
 async function exportCalculatorExcel(){
+  if(!gateFeature('تصدير التقارير الاحترافية','تصدير PDF و Excel متاح في خطة Pro. رقّ الآن لتصدير تقارير احترافية بشعارك وتنسيق جاهز للطباعة والمشاركة.')) return;
   const btns=document.querySelectorAll('[onclick="exportCalculatorExcel()"]');
   btns.forEach(b=>{b.disabled=true;b.textContent='⏳ ...';});
   try{
@@ -1427,6 +1447,7 @@ async function exportCalculatorExcel(){
   }
 }
 async function exportMonthlyExcel(){
+  if(!gateFeature('تصدير التقارير الاحترافية','تصدير PDF و Excel متاح في خطة Pro. رقّ الآن لتصدير تقارير احترافية بشعارك وتنسيق جاهز للطباعة والمشاركة.')) return;
   const btns=document.querySelectorAll('[onclick="exportMonthlyExcel()"]');
   btns.forEach(b=>{b.disabled=true;b.textContent='⏳ ...';});
   try{
@@ -1493,6 +1514,7 @@ async function exportMonthlyExcel(){
   }
 }
 async function exportAdsExcel(){
+  if(!gateFeature('تصدير التقارير الاحترافية','تصدير PDF و Excel متاح في خطة Pro. رقّ الآن لتصدير تقارير احترافية بشعارك وتنسيق جاهز للطباعة والمشاركة.')) return;
   const btns=document.querySelectorAll('[onclick="exportAdsExcel()"]');
   btns.forEach(b=>{b.disabled=true;b.textContent='⏳ ...';});
   try{
@@ -1685,9 +1707,13 @@ function buildAIContext(){
 // 'unauthorized', or 'server_error_<code>' for the callers to translate
 // into a user-facing message.
 async function callAIBackend(userText){
+ // Send the Supabase access token so the backend can verify the caller's
+ // plan server-side (the real Pro enforcement — see api/chat.js).
+ let token='';
+ try{ const {data}=await sb.auth.getSession(); token=data&&data.session?data.session.access_token:''; }catch(e){}
  const resp = await fetch('/api/chat', {
  method: 'POST',
- headers: {'Content-Type': 'application/json'},
+ headers: {'Content-Type': 'application/json', ...(token?{'Authorization':'Bearer '+token}:{})},
  body: JSON.stringify({
  system: buildAIContext(),
  messages: [{role: 'user', content: userText}]
@@ -1696,6 +1722,7 @@ async function callAIBackend(userText){
  if(!resp.ok) {
  const status = resp.status;
  if(status === 429) throw new Error('rate_limit');
+ if(status === 403) throw new Error('pro_required');
  if(status === 401) throw new Error('unauthorized');
  throw new Error('server_error_' + status);
  }
@@ -1704,6 +1731,7 @@ async function callAIBackend(userText){
 }
 function aiErrorMessage(e){
  if(e.message === 'rate_limit') return '⚠️ كثرت الطلبات — انتظر دقيقة وحاول مجدداً';
+ if(e.message === 'pro_required') return '⚠️ المساعد الذكي متاح في خطة Pro — رقّ للاشتراك';
  if(e.message === 'unauthorized') return '⚠️ انتهت جلستك — سجل دخولك من جديد';
  return '⚠️ مشكل في الاتصال — تحقق من الإنترنت وحاول مرة أخرى';
 }
@@ -1790,6 +1818,58 @@ function showToast(msg){
 // ===== PLAN MANAGEMENT =====
 let currentPlan = 'free';
 
+// ===== CENTRAL FREE/PRO GATING (single source of truth) =====
+// Every Pro-gated feature routes through isProUser() + gateFeature() below,
+// so Free vs Pro stays consistent everywhere. NOTE: this is the UI/client
+// layer. The truly secure enforcement (so a technical user can't bypass by
+// editing JS) must live server-side — Supabase RLS + verifying the plan
+// inside the Edge Function that calls the paid AI backend. That server layer
+// is the next step (needs the Supabase project) and is documented separately.
+const FREE_LIMITS = { monthly: 3, compare: 3 };
+function isProUser(){ return currentPlan === 'pro' || currentPlan === 'trial'; }
+// Returns true and lets the action proceed if the user may use the feature;
+// otherwise shows the upgrade modal and returns false (caller must stop).
+function gateFeature(title, desc){
+  if(isProUser()) return true;
+  showUpgradeModal(title, desc);
+  return false;
+}
+function showUpgradeModal(title, desc){
+  let ov = document.getElementById('proUpgradeModal');
+  if(!ov){
+    ov = document.createElement('div');
+    ov.id = 'proUpgradeModal';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(2,8,20,0.72);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;padding:20px;';
+    ov.innerHTML = '<div style="background:var(--card);border:1px solid var(--border);border-radius:18px;max-width:360px;width:100%;padding:24px 22px;text-align:center;box-shadow:0 24px 60px rgba(2,8,20,0.5);">'
+      + '<div style="width:56px;height:56px;margin:0 auto 14px;border-radius:16px;background:var(--teal3);display:flex;align-items:center;justify-content:center;"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>'
+      + '<div id="proModalTitle" style="font-size:16px;font-weight:900;color:var(--text);margin-bottom:8px;"></div>'
+      + '<div id="proModalDesc" style="font-size:12.5px;color:var(--text3);line-height:1.8;margin-bottom:18px;"></div>'
+      + '<button onclick="closeUpgradeModal();goToPlans();" style="width:100%;background:linear-gradient(135deg,#00d4aa,#3b82f6);color:#000;border:none;border-radius:11px;padding:12px;font-family:Cairo,sans-serif;font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> ترقية إلى Pro</button>'
+      + '<button onclick="closeUpgradeModal()" style="width:100%;background:none;border:none;color:var(--text3);font-family:Cairo,sans-serif;font-size:12px;font-weight:700;cursor:pointer;margin-top:10px;">لاحقاً</button>'
+      + '</div>';
+    ov.addEventListener('click', e=>{ if(e.target===ov) closeUpgradeModal(); });
+    document.body.appendChild(ov);
+  }
+  document.getElementById('proModalTitle').textContent = title;
+  document.getElementById('proModalDesc').textContent = desc;
+  ov.style.display = 'flex';
+}
+function closeUpgradeModal(){ const ov=document.getElementById('proUpgradeModal'); if(ov) ov.style.display='none'; }
+// Adds/removes a small lock hint on Pro-only buttons based on current plan.
+function refreshProLocks(){
+  document.querySelectorAll('[data-pro-lock]').forEach(btn=>{
+    const locked = !isProUser();
+    btn.classList.toggle('pro-locked', locked);
+    let tag = btn.querySelector('.pro-lock-tag');
+    if(locked && !tag){
+      tag = document.createElement('span');
+      tag.className = 'pro-lock-tag';
+      tag.innerHTML = ' <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
+      btn.appendChild(tag);
+    } else if(!locked && tag){ tag.remove(); }
+  });
+}
+
 function updatePlanUI(plan) {
  currentPlan = plan || 'free';
  const isPro = (currentPlan === 'pro') || (currentPlan === 'trial');
@@ -1813,6 +1893,8 @@ function updatePlanUI(plan) {
  if(aiContent) {
  aiContent.style.cssText = isPro ? 'display:block!important' : 'display:none!important';
  }
+ refreshProLocks();
+ renderCompare();
  }, 100);
 
  // Pricing buttons
@@ -2104,6 +2186,7 @@ function exportMonthlyPDF() {
 // regardless of which tab the user was on. `_generatePDFReport` below is
 // the shared rendering engine; `sections` controls which parts it builds.
 function _startPDFExport(buttonSelector, sections, docTitle, filename) {
+  if(!gateFeature('تصدير التقارير الاحترافية','تصدير PDF و Excel متاح في خطة Pro. رقّ الآن لتصدير تقارير احترافية بشعارك وتنسيق جاهز للطباعة والمشاركة.')) return;
   const _eb = document.querySelectorAll(buttonSelector);
   _eb.forEach(b => { b.disabled=true; b.textContent='⏳ جاري التحميل...'; });
   const need=[];
